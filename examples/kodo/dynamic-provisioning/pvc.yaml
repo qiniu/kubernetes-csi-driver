@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kodo-pvc
+spec:
+  accessModes:
+  - ReadWriteMany
+  storageClassName: kodo-csi-sc
+  resources:
+    requests:
+      storage: 5Gi

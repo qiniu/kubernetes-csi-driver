@@ -1,0 +1,129 @@
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: kodofsplugin.storage.qiniu.com
+spec:
+  attachRequired: false
+  podInfoOnMount: true
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: kodofs-csi-plugin
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: kodofs-csi-plugin
+  template:
+    metadata:
+      labels:
+        app: kodofs-csi-plugin
+    spec:
+      tolerations:
+      - operator: Exists
+      nodeSelector:
+        kubernetes.io/os: linux
+      priorityClassName: system-node-critical
+      hostNetwork: true
+      hostPID: true
+      containers:
+        - name: csi-driver-registrar
+          image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.5.0
+          imagePullPolicy: Always
+          args:
+            - "--v=5"
+            - "--csi-address=/var/lib/kubelet/csi-plugins/kodofsplugin.storage.qiniu.com/csi.sock"
+            - "--kubelet-registration-path=/var/lib/kubelet/csi-plugins/kodofsplugin.storage.qiniu.com/csi.sock"
+            - "--plugin-registration-path=/registration"
+          volumeMounts:
+            - name: kubelet-dir
+              mountPath: /var/lib/kubelet/
+            - name: registration-dir
+              mountPath: /registration
+          livenessProbe:
+            exec:
+              command:
+              - /csi-node-driver-registrar
+              - --plugin-registration-path=/registration
+              - --kubelet-registration-path=/var/lib/kubelet/csi-plugins/kodofsplugin.storage.qiniu.com/csi.sock
+              - --mode=kubelet-registration-probe
+            initialDelaySeconds: 30
+            timeoutSeconds: 15
+        - name: kodofs-plugin
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          image: bachue/csi-plugin.storage.qiniu.com:v0.0.2-a4fca93
+          imagePullPolicy: Always
+          args:
+            - "--endpoint=$(CSI_ENDPOINT)"
+            - "--v=2"
+            - "--nodeid=$(KUBE_NODE_NAME)"
+            - "--driver=kodofs"
+            - "--health-port=11262"
+          env:
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: CSI_ENDPOINT
+              value: unix://var/lib/kubelet/csi-plugins/kodofsplugin.storage.qiniu.com/csi.sock
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: health
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          ports:
+            - name: health
+              containerPort: 11262
+              protocol: TCP
+          volumeMounts:
+            - name: kubelet-dir
+              mountPath: /var/lib/kubelet/
+              mountPropagation: "Bidirectional"
+            - name: host-log
+              mountPath: /var/log/qiniu/
+            - name: bin-dir
+              mountPath: /host/usr/local/bin/
+            - name: systemd-dir
+              mountPath: /host/etc/systemd/system/
+            - name: socket-dir
+              mountPath: /var/lib/qiniu/
+              mountPropagation: "Bidirectional"
+      volumes:
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry
+            type: DirectoryOrCreate
+        - name: socket-dir
+          hostPath:
+            path: /var/lib/qiniu/
+            type: DirectoryOrCreate
+        - name: kubelet-dir
+          hostPath:
+            path: /var/lib/kubelet
+            type: Directory
+        - name: host-log
+          hostPath:
+            path: /var/log/qiniu/
+            type: DirectoryOrCreate
+        - name: bin-dir
+          hostPath:
+            path: /usr/local/bin/
+            type: DirectoryOrCreate
+        - name: systemd-dir
+          hostPath:
+            path: /etc/systemd/system/
+            type: DirectoryOrCreate
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 10%
+    type: RollingUpdate

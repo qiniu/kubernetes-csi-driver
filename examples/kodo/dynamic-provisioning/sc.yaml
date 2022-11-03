@@ -1,0 +1,13 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: kodo-csi-sc
+parameters:
+  # uploadcutoff: "209715200"         # Cutoff for switching to chunked upload. Any files larger than this will be uploaded in chunks of chunk_size. The minimum is 0 and the maximum is 5 GB (default 200 MB)
+  # uploadchunksize: "5242880"        # Chunk size to use for uploading. (default 5 MB)
+  # uploadconcurrency: "4"            # Concurrency for multipart uploads. This is the number of chunks of the same file that are uploaded concurrently. (default 4)
+  # vfscachemode: "off"               # Cache mode off|minimal|writes|full (default off)
+  csi.storage.k8s.io/provisioner-secret-name: kodo-csi-sc-secret
+  csi.storage.k8s.io/provisioner-secret-namespace: default
+provisioner: kodoplugin.storage.qiniu.com
+reclaimPolicy: Retain

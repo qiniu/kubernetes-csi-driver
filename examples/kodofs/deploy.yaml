@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-kodofs
+  labels:
+    app: nginx
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.22.0-alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: kodofs-pvc
+            mountPath: "/data"
+      volumes:
+        - name: kodofs-pvc
+          persistentVolumeClaim:
+            claimName: kodofs-pvc

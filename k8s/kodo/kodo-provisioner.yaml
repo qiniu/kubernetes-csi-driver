@@ -1,0 +1,54 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: kodo-provisioner
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: kodo-provisioner
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: kodo-provisioner
+    spec:
+      tolerations:
+      - operator: Exists
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: Exists
+      priorityClassName: system-node-critical
+      hostNetwork: true
+      containers:
+        - name: external-kodo-provisioner
+          securityContext:
+            privileged: true
+          image: gcr.io/k8s-staging-sig-storage/csi-provisioner:canary
+          args:
+            - "--csi-address=$(ADDRESS)"
+            - "--volume-name-prefix=kodo"
+            - "--timeout=150s"
+            - "--leader-election=true"
+            - "--retry-interval-start=500ms"
+            - "--v=5"
+          env:
+            - name: ADDRESS
+              value: /var/lib/kubelet/csi-plugins/kodoplugin.storage.qiniu.com/csi.sock
+          imagePullPolicy: "Always"
+          volumeMounts:
+            - name: kubelet-dir
+              mountPath: /var/lib/kubelet/
+              mountPropagation: "Bidirectional"
+      volumes:
+        - name: kubelet-dir
+          hostPath:
+            path: /var/lib/kubelet
+            type: Directory

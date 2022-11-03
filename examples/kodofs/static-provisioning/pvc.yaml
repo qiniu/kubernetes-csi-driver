@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kodofs-pvc
+spec:
+  accessModes:
+  - ReadWriteMany
+  storageClassName: ''
+  resources:
+    requests:
+      storage: 5Gi
+  selector:
+    matchLabels:
+      kodofs-pvname: kodofs-csi-pv

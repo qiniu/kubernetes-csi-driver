@@ -238,7 +238,7 @@ func (cs *kodoControllerServer) DeleteVolume(ctx context.Context, req *csi.Delet
 	} else if err = client.DeleteIAMUser(ctx, iamUserName); err != nil {
 		return nil, fmt.Errorf("DeleteVolume: delete IAM user %s error: %w", iamUserName, err)
 	} else {
-		log.Infof("DeleteVolume: KodoFS bucket %s is revoked", parameter.bucketName)
+		log.Infof("DeleteVolume: Kodo bucket %s is revoked", parameter.bucketName)
 	}
 
 	if persistentVolumeReclaimPolicy == corev1.PersistentVolumeReclaimDelete {
@@ -247,7 +247,7 @@ func (cs *kodoControllerServer) DeleteVolume(ctx context.Context, req *csi.Delet
 		} else if err = client.DeleteBucket(ctx, parameter.bucketName); err != nil {
 			return nil, fmt.Errorf("DeleteVolume: failed to delete bucket %s", parameter.bucketName)
 		} else {
-			log.Infof("DeleteVolume: KodoFS bucket %s is deleted", parameter.bucketName)
+			log.Infof("DeleteVolume: Kodo bucket %s is deleted", parameter.bucketName)
 		}
 	}
 

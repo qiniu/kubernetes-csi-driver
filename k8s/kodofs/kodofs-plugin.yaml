@@ -20,6 +20,7 @@ spec:
       labels:
         app: kodofs-csi-plugin
     spec:
+      serviceAccount: sa.kodofsplugin.storage.qiniu.com
       tolerations:
       - operator: Exists
       nodeSelector:

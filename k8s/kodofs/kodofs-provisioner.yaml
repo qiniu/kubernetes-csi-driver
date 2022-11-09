@@ -13,6 +13,7 @@ spec:
       labels:
         app: kodofs-provisioner
     spec:
+      serviceAccount: sa.kodofsplugin.storage.qiniu.com
       tolerations:
       - operator: Exists
       nodeSelector:

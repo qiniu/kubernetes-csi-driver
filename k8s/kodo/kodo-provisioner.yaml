@@ -13,6 +13,7 @@ spec:
       labels:
         app: kodo-provisioner
     spec:
+      serviceAccount: sa.kodoplugin.storage.qiniu.com
       tolerations:
       - operator: Exists
       nodeSelector:

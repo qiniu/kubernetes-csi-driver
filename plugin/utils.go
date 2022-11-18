@@ -189,19 +189,11 @@ func mountKodoFS(gatewayID, mountPath string, mountServerAddress *url.URL, acces
 		}
 		switch cmd.(type) {
 		case *protocol.InitKodoFSMountCmd:
-			if err = encoder.Encode(&protocol.Request{
-				Version: protocol.Version,
-				Cmd:     protocol.InitKodoFsMountCmdName,
-				Payload: json.RawMessage(buf),
-			}); err != nil {
+			if err = encoder.Encode(makeRequest(protocol.InitKodoFsMountCmdName, buf)); err != nil {
 				return fmt.Errorf("failed to write command to unix socket %s: %w", SocketPath, err)
 			}
 		case *protocol.RequestDataCmd:
-			if err = encoder.Encode(&protocol.Request{
-				Version: protocol.Version,
-				Cmd:     protocol.RequestDataCmdName,
-				Payload: json.RawMessage(buf),
-			}); err != nil {
+			if err = encoder.Encode(makeRequest(protocol.RequestDataCmdName, buf)); err != nil {
 				return fmt.Errorf("failed to write command to unix socket %s: %w", SocketPath, err)
 			}
 		}
@@ -287,11 +279,7 @@ func mountKodo(volumeId, mountPath, subDir, accessKey, secretKey, bucketId, s3Re
 		}
 		switch cmd.(type) {
 		case *protocol.InitKodoMountCmd:
-			if err = encoder.Encode(&protocol.Request{
-				Version: protocol.Version,
-				Cmd:     protocol.InitKodoMountCmdName,
-				Payload: json.RawMessage(buf),
-			}); err != nil {
+			if err = encoder.Encode(makeRequest(protocol.InitKodoMountCmdName, buf)); err != nil {
 				return fmt.Errorf("failed to write command to unix socket %s: %w", SocketPath, err)
 			}
 		}
@@ -409,6 +397,44 @@ func mountKodo(volumeId, mountPath, subDir, accessKey, secretKey, bucketId, s3Re
 func umount(mountPath string) error {
 	_, err := exec.Command("umount", "-f", mountPath).Output()
 	return err
+}
+
+func cleanAfterKodoUmount(volumeId, mountPath string) error {
+	conn, err := net.Dial("unix", SocketPath)
+	if err != nil {
+		return fmt.Errorf("failed to dial unix socket %s: %w", SocketPath, err)
+	}
+	defer conn.Close()
+
+	encoder := json.NewEncoder(conn)
+
+	writeCmdToConn := func(encoder *json.Encoder, cmd protocol.Cmd) error {
+		buf, err := json.Marshal(cmd)
+		if err != nil {
+			return fmt.Errorf("failed to marshal json payload: %w", err)
+		}
+		switch cmd.(type) {
+		case *protocol.KodoUmountCmd:
+			if err = encoder.Encode(makeRequest(protocol.KodoUmountCmdName, buf)); err != nil {
+				return fmt.Errorf("failed to write command to unix socket %s: %w", SocketPath, err)
+			}
+		}
+		return nil
+	}
+
+	cmd := protocol.KodoUmountCmd{
+		VolumeId:  volumeId,
+		MountPath: mountPath,
+	}
+	return writeCmdToConn(encoder, &cmd)
+}
+
+func makeRequest(cmdName string, buf []byte) *protocol.Request {
+	return &protocol.Request{
+		Version: protocol.Version,
+		Cmd:     cmdName,
+		Payload: json.RawMessage(buf),
+	}
 }
 
 const (

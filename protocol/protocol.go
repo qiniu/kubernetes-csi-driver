@@ -12,6 +12,7 @@ const (
 	Version                = "v2"
 	InitKodoMountCmdName   = "init_kodo_mount"
 	InitKodoFsMountCmdName = "init_kodofs_mount"
+	KodoUmountCmdName      = "umount_kodo"
 	RequestDataCmdName     = "request_data"
 	ResponseDataCmdName    = "response_data"
 	TerminateCmdName       = "terminate"
@@ -67,6 +68,11 @@ type (
 		DebugFuse             bool    `json:"debug_fuse,omitempty"`
 	}
 
+	KodoUmountCmd struct {
+		VolumeId  string `json:"volume_id"`
+		MountPath string `json:"mount_path"`
+	}
+
 	RequestDataCmd struct {
 		Data string `json:"data"`
 	}
@@ -92,6 +98,7 @@ type (
 
 func (*InitKodoFSMountCmd) Command() {}
 func (*InitKodoMountCmd) Command()   {}
+func (*KodoUmountCmd) Command()      {}
 func (*RequestDataCmd) Command()     {}
 func (*ResponseDataCmd) Command()    {}
 func (*TerminateCmd) Command()       {}

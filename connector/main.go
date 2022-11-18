@@ -279,6 +279,15 @@ func handleConn(conn net.Conn, cmdIn <-chan protocol.Cmd, cmdOut chan<- protocol
 				log.Infof("Received requestDataCmd: %#v", payload)
 				cmdOut <- payload
 			}
+		case protocol.KodoUmountCmdName:
+			payload := new(protocol.KodoUmountCmd)
+			if err := json.Unmarshal([]byte(request.Payload), payload); err != nil {
+				log.Warnf("Protocol %s payload parse error: %s", request.Cmd, err)
+				return
+			} else {
+				log.Infof("Received kodoUmountCmd: %#v", payload)
+				cmdOut <- payload
+			}
 		default:
 			log.Warnf("Unrecognized request cmd: %s", request.Cmd)
 			return
@@ -416,6 +425,14 @@ func handleCmd(cmdOut chan<- protocol.Cmd, cmdIn <-chan protocol.Cmd) {
 				if ok := execCommand(c.ExecCommand(ctx), func() { os.Remove(rcloneConfigPath) }); !ok {
 					return
 				}
+			case *protocol.KodoUmountCmd:
+				uuid := rcloneCacheId(c.MountPath)
+				volumeCacheDir := filepath.Join(rcloneCacheDir, c.VolumeId, uuid)
+				rcloneLogFile := filepath.Join(rcloneLogDir, c.VolumeId, uuid+".log")
+				os.RemoveAll(volumeCacheDir)
+				os.Remove(rcloneLogFile)
+				os.Remove(filepath.Dir(rcloneLogFile))
+				os.Remove(filepath.Dir(volumeCacheDir))
 			case *protocol.RequestDataCmd:
 				if stdin == nil {
 					log.Warnf("Received RequestDataCmd when process is not started")

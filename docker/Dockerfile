@@ -1,7 +1,7 @@
 FROM debian:bullseye
 
 ARG KODOFS_VERSION=2.4.18
-ARG RCLONE_VERSION=1.60.0
+ARG RCLONE_VERSION=1.60.1
 COPY nsenter /usr/local/bin/nsenter
 COPY kodofs-v${KODOFS_VERSION} /usr/local/bin/kodofs
 COPY rclone-v${RCLONE_VERSION} /usr/local/bin/rclone

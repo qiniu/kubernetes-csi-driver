@@ -369,7 +369,7 @@ func handleCmd(cmdOut chan<- protocol.Cmd, cmdIn <-chan protocol.Cmd) {
 			log.Errorf("Failed to create stderr pipe: %s", err)
 			return false
 		}
-		go outputReader("stderr", stderr, false)
+		go outputReader("stderr", stderr, true)
 		go func() {
 			defer cancel()
 			err := execCmd.Run()

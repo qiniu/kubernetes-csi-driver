@@ -57,7 +57,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: kodoproduct/csi-plugin.storage.qiniu.com:v0.1.0-5-g9007c38
+          image: kodoproduct/csi-plugin.storage.qiniu.com:v0.1.1
           imagePullPolicy: Always
           args:
             - "--endpoint=$(CSI_ENDPOINT)"

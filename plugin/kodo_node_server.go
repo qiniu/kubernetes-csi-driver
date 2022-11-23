@@ -70,6 +70,11 @@ func (server *kodoNodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.
 	} else {
 		log.Infof("NodeUnpublishVolume: umounted kodo volume from path: %s", mountPath)
 	}
+	if err = cleanAfterKodoUmount(req.VolumeId, mountPath); err != nil {
+		log.Warnf("NodeUnpublishVolume: failed to clean kodo volume cache and log files: %s", err)
+	} else {
+		log.Infof("NodeUnpublishVolume: kodo volume cache and log files are cleaned")
+	}
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 )
 
@@ -13,6 +12,7 @@ const (
 	Version                = "v2"
 	InitKodoMountCmdName   = "init_kodo_mount"
 	InitKodoFsMountCmdName = "init_kodofs_mount"
+	KodoUmountCmdName      = "umount_kodo"
 	RequestDataCmdName     = "request_data"
 	ResponseDataCmdName    = "response_data"
 	TerminateCmdName       = "terminate"
@@ -68,6 +68,11 @@ type (
 		DebugFuse             bool    `json:"debug_fuse,omitempty"`
 	}
 
+	KodoUmountCmd struct {
+		VolumeId  string `json:"volume_id"`
+		MountPath string `json:"mount_path"`
+	}
+
 	RequestDataCmd struct {
 		Data string `json:"data"`
 	}
@@ -93,6 +98,7 @@ type (
 
 func (*InitKodoFSMountCmd) Command() {}
 func (*InitKodoMountCmd) Command()   {}
+func (*KodoUmountCmd) Command()      {}
 func (*RequestDataCmd) Command()     {}
 func (*ResponseDataCmd) Command()    {}
 func (*TerminateCmd) Command()       {}
@@ -107,7 +113,7 @@ const (
 
 	ContextKeyConfigFilePath contextKey = "config_file_path"
 	ContextKeyUserAgent      contextKey = "user_agent"
-	ContextKeyLogDirPath     contextKey = "log_dir_path"
+	ContextKeyLogFilePath    contextKey = "log_file_path"
 	ContextKeyCacheDirPath   contextKey = "cache_dir_path"
 )
 
@@ -119,14 +125,14 @@ func (c *InitKodoFSMountCmd) ExecCommand(ctx context.Context) *exec.Cmd {
 func (c *InitKodoMountCmd) ExecCommand(ctx context.Context) *exec.Cmd {
 	rcloneConfigFilePath := ctx.Value(ContextKeyConfigFilePath).(string)
 	userAgent := ctx.Value(ContextKeyUserAgent).(string)
-	rcloneLogDirPath := ctx.Value(ContextKeyLogDirPath).(string)
+	rcloneLogFilePath := ctx.Value(ContextKeyLogFilePath).(string)
 	rcloneCacheDirPath := ctx.Value(ContextKeyCacheDirPath).(string)
 
 	var cmdFlags = []string{
 		"--auto-confirm",
 		"--config", rcloneConfigFilePath,
 		"--user-agent", fmt.Sprintf("%s/%s", userAgent, c.VolumeId),
-		"--log-file", filepath.Join(rcloneLogDirPath, c.VolumeId+".log")}
+		"--log-file", rcloneLogFilePath}
 	if c.BufferSize != nil {
 		cmdFlags = append(cmdFlags, []string{"--buffer-size", formatByteSize(*c.BufferSize)}...)
 	}

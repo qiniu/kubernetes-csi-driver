@@ -2,11 +2,16 @@ package main
 
 import (
 	"bytes"
+	"crypto/md5"
+	"encoding/hex"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 
 	"github.com/Unknwon/goconfig"
@@ -33,6 +38,46 @@ const (
 	RCLONE_CONFIG_PUBLIC_READ_WRITE_ACL = "public-read-write"
 	RCLONE_CONFIG_BOOL_TRUE             = "true"
 )
+
+func userLogDir() (string, error) {
+	var dir string
+
+	switch runtime.GOOS {
+	case "windows":
+		dir = os.Getenv("LocalAppData")
+		if dir == "" {
+			return "", errors.New("%LocalAppData% is not defined")
+		}
+
+	case "darwin", "ios":
+		dir = os.Getenv("HOME")
+		if dir == "" {
+			return "", errors.New("$HOME is not defined")
+		}
+		dir += "/Library/Logs"
+
+	case "plan9":
+		dir = os.Getenv("home")
+		if dir == "" {
+			return "", errors.New("$home is not defined")
+		}
+		dir += "/lib/log"
+
+	default: // Unix
+		dir = "/var/log"
+	}
+
+	return dir, nil
+}
+
+func rcloneCacheId(items ...string) string {
+	hasher := md5.New()
+	for _, item := range items {
+		io.WriteString(hasher, item)
+		hasher.Write([]byte{0})
+	}
+	return hex.EncodeToString(hasher.Sum(nil))
+}
 
 func ensureDirectoryExists(path string) error {
 	if fileInfo, err := os.Stat(path); os.IsNotExist(err) {

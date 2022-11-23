@@ -80,23 +80,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		homeDir = os.TempDir()
+	if userConfigDir, err := os.UserConfigDir(); err != nil {
+		rcloneConfigDir = filepath.Join(os.TempDir(), ".rclone", "config")
+	} else {
+		rcloneConfigDir = filepath.Join(userConfigDir, "rclone")
 	}
-	rcloneConfigDir = filepath.Join(homeDir, ".rclone", "config")
+
+	if userCacheDir, err := os.UserCacheDir(); err != nil {
+		rcloneCacheDir = filepath.Join(os.TempDir(), ".rclone", "cache")
+	} else {
+		rcloneCacheDir = filepath.Join(userCacheDir, "rclone")
+	}
+
+	if userLogDir, err := userLogDir(); err != nil {
+		rcloneLogDir = filepath.Join(os.TempDir(), ".rclone", "log")
+	} else {
+		rcloneLogDir = filepath.Join(userLogDir, "rclone")
+	}
+
 	if err = ensureDirectoryExists(rcloneConfigDir); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to ensure directory %s exists: %s", rcloneConfigDir, err)
 		os.Exit(1)
 	}
-
-	rcloneCacheDir = filepath.Join(homeDir, ".rclone", "cache")
 	if err = ensureDirectoryExists(rcloneCacheDir); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to ensure directory %s exists: %s", rcloneCacheDir, err)
 		os.Exit(1)
 	}
-
-	rcloneLogDir = filepath.Join(homeDir, ".rclone", "log")
 	if err = ensureDirectoryExists(rcloneLogDir); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to ensure directory %s exists: %s", rcloneLogDir, err)
 		os.Exit(1)
@@ -270,6 +279,15 @@ func handleConn(conn net.Conn, cmdIn <-chan protocol.Cmd, cmdOut chan<- protocol
 				log.Infof("Received requestDataCmd: %#v", payload)
 				cmdOut <- payload
 			}
+		case protocol.KodoUmountCmdName:
+			payload := new(protocol.KodoUmountCmd)
+			if err := json.Unmarshal([]byte(request.Payload), payload); err != nil {
+				log.Warnf("Protocol %s payload parse error: %s", request.Cmd, err)
+				return
+			} else {
+				log.Infof("Received kodoUmountCmd: %#v", payload)
+				cmdOut <- payload
+			}
 		default:
 			log.Warnf("Unrecognized request cmd: %s", request.Cmd)
 			return
@@ -351,7 +369,7 @@ func handleCmd(cmdOut chan<- protocol.Cmd, cmdIn <-chan protocol.Cmd) {
 			log.Errorf("Failed to create stderr pipe: %s", err)
 			return false
 		}
-		go outputReader("stderr", stderr, false)
+		go outputReader("stderr", stderr, true)
 		go func() {
 			defer cancel()
 			err := execCmd.Run()
@@ -389,13 +407,32 @@ func handleCmd(cmdOut chan<- protocol.Cmd, cmdIn <-chan protocol.Cmd) {
 					log.Warnf("Failed to write rclone config: %s", err)
 					return
 				}
+				uuid := rcloneCacheId(c.MountPath)
+				volumeCacheDir := filepath.Join(rcloneCacheDir, c.VolumeId, uuid)
+				if err = ensureDirectoryExists(volumeCacheDir); err != nil {
+					log.Errorf("Failed to ensure directory %s exists: %s", volumeCacheDir, err)
+					return
+				}
+				rcloneLogFile := filepath.Join(rcloneLogDir, c.VolumeId, uuid+".log")
+				if err = ensureDirectoryExists(filepath.Dir(rcloneLogFile)); err != nil {
+					log.Errorf("Failed to ensure directory %s exists: %s", filepath.Dir(rcloneLogFile), err)
+					return
+				}
 				ctx = context.WithValue(ctx, protocol.ContextKeyConfigFilePath, rcloneConfigPath)
 				ctx = context.WithValue(ctx, protocol.ContextKeyUserAgent, userAgent)
-				ctx = context.WithValue(ctx, protocol.ContextKeyLogDirPath, rcloneLogDir)
-				ctx = context.WithValue(ctx, protocol.ContextKeyCacheDirPath, rcloneCacheDir)
+				ctx = context.WithValue(ctx, protocol.ContextKeyLogFilePath, rcloneLogFile)
+				ctx = context.WithValue(ctx, protocol.ContextKeyCacheDirPath, volumeCacheDir)
 				if ok := execCommand(c.ExecCommand(ctx), func() { os.Remove(rcloneConfigPath) }); !ok {
 					return
 				}
+			case *protocol.KodoUmountCmd:
+				uuid := rcloneCacheId(c.MountPath)
+				volumeCacheDir := filepath.Join(rcloneCacheDir, c.VolumeId, uuid)
+				rcloneLogFile := filepath.Join(rcloneLogDir, c.VolumeId, uuid+".log")
+				os.RemoveAll(volumeCacheDir)
+				os.Remove(rcloneLogFile)
+				os.Remove(filepath.Dir(rcloneLogFile))
+				os.Remove(filepath.Dir(volumeCacheDir))
 			case *protocol.RequestDataCmd:
 				if stdin == nil {
 					log.Warnf("Received RequestDataCmd when process is not started")

@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -48,6 +47,9 @@ type Bucket struct {
 	KodoRegionID string `json:"region"`
 }
 
+// NewKodoClient 根据指定的 accessKey 和 secretKey 创建一个 KodoClient
+// ucUrl 在公有云上是 https://uc.qbox.me
+// version 和 commitId 用于标识当前的版本，用于 UserAgent 传递给服务端
 func NewKodoClient(accessKey, secretKey string, ucUrl *url.URL, version, commitId string) *KodoClient {
 	httpClient := new(http.Client)
 	transport := NewUserAgentTransport(fmt.Sprintf("QiniuCSIDriver/%s/%s/kodo", version, commitId), httpClient.Transport)
@@ -56,19 +58,20 @@ func NewKodoClient(accessKey, secretKey string, ucUrl *url.URL, version, commitI
 	return &KodoClient{httpClient: httpClient, ucUrl: ucUrl, accessKey: accessKey, secretKey: secretKey}
 }
 
+// CreateBucket 根据指定的 bucketName 和 regionID 创建一个 bucket
 func (client *KodoClient) CreateBucket(ctx context.Context, bucketName, regionID string) error {
-	url := client.ucUrl.String() + "/mkbucketv3/" + bucketName + "/region/" + regionID + "/private/true/nodomain/true"
-	if request, err := http.NewRequest(http.MethodPost, url, http.NoBody); err != nil {
+	requestUrl := client.ucUrl.String() + "/mkbucketv3/" + bucketName + "/region/" + regionID + "/private/true/nodomain/true"
+	if request, err := http.NewRequest(http.MethodPost, requestUrl, http.NoBody); err != nil {
 		return fmt.Errorf("KodoClient.CreateBucket: create request err: %w", err)
 	} else if resp, err := client.httpClient.Do(request.WithContext(ctx)); err != nil {
 		return fmt.Errorf("KodoClient.CreateBucket: send request err: %w", err)
 	} else {
 		defer resp.Body.Close()
-		if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
 			return fmt.Errorf("KodoClient.CreateBucket: read response err: %w", err)
 		} else if resp.StatusCode == http.StatusOK {
 			return nil
-		} else if errBody, err := parseKodoErrorFromResponseBody(bytes); err != nil {
+		} else if errBody, err := parseKodoErrorFromResponseBody(bs); err != nil {
 			return err
 		} else if errBody != nil {
 			return errBody
@@ -132,8 +135,8 @@ func (client *KodoClient) CreateIAMUser(ctx context.Context, userName, password 
 	if err != nil {
 		return fmt.Errorf("KodoClient.CreateIAMUser: failed to marshal request body")
 	}
-	url := apiEndpoint.String() + "/iam/v1/users"
-	if request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(requestBodyBytes)); err != nil {
+	requestUrl := apiEndpoint.String() + "/iam/v1/users"
+	if request, err := http.NewRequest(http.MethodPost, requestUrl, bytes.NewReader(requestBodyBytes)); err != nil {
 		return fmt.Errorf("KodoClient.CreateIAMUser: create request err: %w", err)
 	} else {
 		request.Header.Set("Content-Type", "application/json")
@@ -141,11 +144,11 @@ func (client *KodoClient) CreateIAMUser(ctx context.Context, userName, password 
 			return fmt.Errorf("KodoClient.CreateIAMUser: send request err: %w", err)
 		} else {
 			defer resp.Body.Close()
-			if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+			if bs, err := io.ReadAll(resp.Body); err != nil {
 				return fmt.Errorf("KodoClient.CreateIAMUser: read response err: %w", err)
 			} else if resp.StatusCode == http.StatusOK {
 				return nil
-			} else if errBody, err := parseKodoErrorFromResponseBody(bytes); err != nil {
+			} else if errBody, err := parseKodoErrorFromResponseBody(bs); err != nil {
 				return err
 			} else if errBody != nil {
 				return errBody
@@ -185,18 +188,18 @@ func (client *KodoClient) getFirstIAMUserKeyPair(ctx context.Context, userName s
 	} else if apiEndpoint == nil {
 		return nil, fmt.Errorf("KodoClient.getFirstIAMUserKeyPair: cannot get api endpoint of central region")
 	}
-	url := apiEndpoint.String() + "/iam/v1/users/" + userName + "/keypairs"
-	if request, err := http.NewRequest(http.MethodGet, url, http.NoBody); err != nil {
+	requestUrl := apiEndpoint.String() + "/iam/v1/users/" + userName + "/keypairs"
+	if request, err := http.NewRequest(http.MethodGet, requestUrl, http.NoBody); err != nil {
 		return nil, fmt.Errorf("KodoClient.getFirstIAMUserKeyPair: create request err: %w", err)
 	} else if resp, err := client.httpClient.Do(request.WithContext(ctx)); err != nil {
 		return nil, fmt.Errorf("KodoClient.getFirstIAMUserKeyPair: send request err: %w", err)
 	} else {
 		defer resp.Body.Close()
-		if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
 			return nil, fmt.Errorf("KodoClient.getFirstIAMUserKeyPair: read response err: %w", err)
 		} else if resp.StatusCode == http.StatusOK {
 			var responseBody ResponseBody
-			if err = json.Unmarshal(bytes, &responseBody); err != nil {
+			if err = json.Unmarshal(bs, &responseBody); err != nil {
 				return nil, fmt.Errorf("KodoClient.getFirstIAMUserKeyPair: parse response body err: %w", err)
 			}
 			if len(responseBody.Data.List) > 0 {
@@ -205,7 +208,7 @@ func (client *KodoClient) getFirstIAMUserKeyPair(ctx context.Context, userName s
 			} else {
 				return nil, nil
 			}
-		} else if errBody, err := parseKodoErrorFromResponseBody(bytes); err != nil {
+		} else if errBody, err := parseKodoErrorFromResponseBody(bs); err != nil {
 			return nil, err
 		} else if errBody != nil {
 			return nil, errBody
@@ -228,23 +231,23 @@ func (client *KodoClient) createIAMUserKeyPair(ctx context.Context, userName str
 	} else if apiEndpoint == nil {
 		return nil, fmt.Errorf("KodoClient.createIAMUserKeyPair: cannot get api endpoint of central region")
 	}
-	url := apiEndpoint.String() + "/iam/v1/users/" + userName + "/keypairs"
-	if request, err := http.NewRequest(http.MethodPost, url, http.NoBody); err != nil {
+	requestUrl := apiEndpoint.String() + "/iam/v1/users/" + userName + "/keypairs"
+	if request, err := http.NewRequest(http.MethodPost, requestUrl, http.NoBody); err != nil {
 		return nil, fmt.Errorf("KodoClient.createIAMUserKeyPair: create request err: %w", err)
 	} else if resp, err := client.httpClient.Do(request.WithContext(ctx)); err != nil {
 		return nil, fmt.Errorf("KodoClient.createIAMUserKeyPair: send request err: %w", err)
 	} else {
 		defer resp.Body.Close()
-		if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
 			return nil, fmt.Errorf("KodoClient.createIAMUserKeyPair: read response err: %w", err)
 		} else if resp.StatusCode == http.StatusOK {
 			var responseBody ResponseBody
-			if err = json.Unmarshal(bytes, &responseBody); err != nil {
+			if err = json.Unmarshal(bs, &responseBody); err != nil {
 				return nil, fmt.Errorf("KodoClient.createIAMUserKeyPair: parse response body err: %w", err)
 			}
 			keyPair := [2]string{responseBody.Data.AccessKey, responseBody.Data.SecretKey}
 			return &keyPair, nil
-		} else if errBody, err := parseKodoErrorFromResponseBody(bytes); err != nil {
+		} else if errBody, err := parseKodoErrorFromResponseBody(bs); err != nil {
 			return nil, err
 		} else if errBody != nil {
 			return nil, errBody
@@ -261,18 +264,18 @@ func (client *KodoClient) DeleteIAMUser(ctx context.Context, userName string) er
 	} else if apiEndpoint == nil {
 		return fmt.Errorf("KodoClient.DeleteIAMUser: cannot get api endpoint of central region")
 	}
-	url := apiEndpoint.String() + "/iam/v1/users/" + userName
-	if request, err := http.NewRequest(http.MethodDelete, url, http.NoBody); err != nil {
+	requestUrl := apiEndpoint.String() + "/iam/v1/users/" + userName
+	if request, err := http.NewRequest(http.MethodDelete, requestUrl, http.NoBody); err != nil {
 		return fmt.Errorf("KodoClient.DeleteIAMUser: create request err: %w", err)
 	} else if resp, err := client.httpClient.Do(request.WithContext(ctx)); err != nil {
 		return fmt.Errorf("KodoClient.DeleteIAMUser: send request err: %w", err)
 	} else {
 		defer resp.Body.Close()
-		if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
 			return fmt.Errorf("KodoClient.DeleteIAMUser: read response err: %w", err)
 		} else if resp.StatusCode == http.StatusOK {
 			return nil
-		} else if errBody, err := parseKodoErrorFromResponseBody(bytes); err != nil {
+		} else if errBody, err := parseKodoErrorFromResponseBody(bs); err != nil {
 			return err
 		} else if errBody != nil {
 			return errBody
@@ -314,8 +317,8 @@ func (client *KodoClient) CreateIAMPolicy(ctx context.Context, name, bucketName 
 		return fmt.Errorf("KodoClient.CreateIAMPolicy: failed to marshal request body")
 	}
 
-	url := apiEndpoint.String() + "/iam/v1/policies"
-	if request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(requestBodyBytes)); err != nil {
+	requestUrl := apiEndpoint.String() + "/iam/v1/policies"
+	if request, err := http.NewRequest(http.MethodPost, requestUrl, bytes.NewReader(requestBodyBytes)); err != nil {
 		return fmt.Errorf("KodoClient.CreateIAMPolicy: create request err: %w", err)
 	} else {
 		request.Header.Set("Content-Type", "application/json")
@@ -323,11 +326,11 @@ func (client *KodoClient) CreateIAMPolicy(ctx context.Context, name, bucketName 
 			return fmt.Errorf("KodoClient.CreateIAMPolicy: send request err: %w", err)
 		} else {
 			defer resp.Body.Close()
-			if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+			if bs, err := io.ReadAll(resp.Body); err != nil {
 				return fmt.Errorf("KodoClient.CreateIAMPolicy: read response err: %w", err)
 			} else if resp.StatusCode == http.StatusOK {
 				return nil
-			} else if errBody, err := parseKodoErrorFromResponseBody(bytes); err != nil {
+			} else if errBody, err := parseKodoErrorFromResponseBody(bs); err != nil {
 				return err
 			} else if errBody != nil {
 				return errBody
@@ -345,18 +348,18 @@ func (client *KodoClient) DeleteIAMPolicy(ctx context.Context, name string) erro
 	} else if apiEndpoint == nil {
 		return fmt.Errorf("KodoClient.DeleteIAMPolicy: cannot get api endpoint of central region")
 	}
-	url := apiEndpoint.String() + "/iam/v1/policies/" + name
-	if request, err := http.NewRequest(http.MethodDelete, url, http.NoBody); err != nil {
+	requestUrl := apiEndpoint.String() + "/iam/v1/policies/" + name
+	if request, err := http.NewRequest(http.MethodDelete, requestUrl, http.NoBody); err != nil {
 		return fmt.Errorf("KodoClient.DeleteIAMPolicy: create request err: %w", err)
 	} else if resp, err := client.httpClient.Do(request.WithContext(ctx)); err != nil {
 		return fmt.Errorf("KodoClient.DeleteIAMPolicy: send request err: %w", err)
 	} else {
 		defer resp.Body.Close()
-		if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
 			return fmt.Errorf("KodoClient.DeleteIAMPolicy: read response err: %w", err)
 		} else if resp.StatusCode == http.StatusOK {
 			return nil
-		} else if errBody, err := parseKodoErrorFromResponseBody(bytes); err != nil {
+		} else if errBody, err := parseKodoErrorFromResponseBody(bs); err != nil {
 			return err
 		} else if errBody != nil {
 			return errBody
@@ -382,8 +385,8 @@ func (client *KodoClient) GrantIAMPolicyToUser(ctx context.Context, userName str
 		return fmt.Errorf("KodoClient.GrantIAMPolicyToUser: failed to marshal request body")
 	}
 
-	url := apiEndpoint.String() + "/iam/v1/users/" + userName + "/policies"
-	if request, err := http.NewRequest(http.MethodPatch, url, bytes.NewReader(requestBodyBytes)); err != nil {
+	requestUrl := apiEndpoint.String() + "/iam/v1/users/" + userName + "/policies"
+	if request, err := http.NewRequest(http.MethodPatch, requestUrl, bytes.NewReader(requestBodyBytes)); err != nil {
 		return fmt.Errorf("KodoClient.GrantIAMPolicyToUser: create request err: %w", err)
 	} else {
 		request.Header.Set("Content-Type", "application/json")
@@ -391,11 +394,11 @@ func (client *KodoClient) GrantIAMPolicyToUser(ctx context.Context, userName str
 			return fmt.Errorf("KodoClient.GrantIAMPolicyToUser: send request err: %w", err)
 		} else {
 			defer resp.Body.Close()
-			if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+			if bs, err := io.ReadAll(resp.Body); err != nil {
 				return fmt.Errorf("KodoClient.GrantIAMPolicyToUser: read response err: %w", err)
 			} else if resp.StatusCode == http.StatusOK {
 				return nil
-			} else if errBody, err := parseKodoErrorFromResponseBody(bytes); err != nil {
+			} else if errBody, err := parseKodoErrorFromResponseBody(bs); err != nil {
 				return err
 			} else if errBody != nil {
 				return errBody
@@ -422,8 +425,8 @@ func (client *KodoClient) RevokeIAMPolicyFromUser(ctx context.Context, userName 
 		return fmt.Errorf("KodoClient.RevokeIAMPolicyFromUser: failed to marshal request body")
 	}
 
-	url := apiEndpoint.String() + "/iam/v1/users/" + userName + "/policies"
-	if request, err := http.NewRequest(http.MethodDelete, url, bytes.NewReader(requestBodyBytes)); err != nil {
+	requestUrl := apiEndpoint.String() + "/iam/v1/users/" + userName + "/policies"
+	if request, err := http.NewRequest(http.MethodDelete, requestUrl, bytes.NewReader(requestBodyBytes)); err != nil {
 		return fmt.Errorf("KodoClient.RevokeIAMPolicyFromUser: create request err: %w", err)
 	} else {
 		request.Header.Set("Content-Type", "application/json")
@@ -431,11 +434,11 @@ func (client *KodoClient) RevokeIAMPolicyFromUser(ctx context.Context, userName 
 			return fmt.Errorf("KodoClient.RevokeIAMPolicyFromUser: send request err: %w", err)
 		} else {
 			defer resp.Body.Close()
-			if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+			if bs, err := io.ReadAll(resp.Body); err != nil {
 				return fmt.Errorf("KodoClient.RevokeIAMPolicyFromUser: read response err: %w", err)
 			} else if resp.StatusCode == http.StatusOK {
 				return nil
-			} else if errBody, err := parseKodoErrorFromResponseBody(bytes); err != nil {
+			} else if errBody, err := parseKodoErrorFromResponseBody(bs); err != nil {
 				return err
 			} else if errBody != nil {
 				return errBody
@@ -513,9 +516,9 @@ func (client *KodoClient) listObjects(ctx context.Context, bucketName string) (<
 				return listedObjectsChan, nil
 			} else {
 				defer resp.Body.Close()
-				if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+				if bs, err := io.ReadAll(resp.Body); err != nil {
 					return nil, fmt.Errorf("KodoClient.listObjects: read response err: %w", err)
-				} else if errBody, err := parseKodoErrorFromResponseBody(bytes); err != nil {
+				} else if errBody, err := parseKodoErrorFromResponseBody(bs); err != nil {
 					return nil, err
 				} else if errBody != nil {
 					return nil, errBody
@@ -578,18 +581,18 @@ func (client *KodoClient) deleteObjects(ctx context.Context, bucketName string, 
 		for _, objectName := range objectNames {
 			values.Add("op", "/delete/"+encodeEntry(bucketName, objectName))
 		}
-		url := rsfEndpoint.String() + "/batch"
-		if request, err := http.NewRequest(http.MethodPost, url, strings.NewReader(values.Encode())); err != nil {
+		requestUrl := rsfEndpoint.String() + "/batch"
+		if request, err := http.NewRequest(http.MethodPost, requestUrl, strings.NewReader(values.Encode())); err != nil {
 			return fmt.Errorf("KodoClient.deleteObjects: create request err: %w", err)
 		} else if resp, err := client.httpClient.Do(request.WithContext(ctx)); err != nil {
 			return fmt.Errorf("KodoClient.deleteObjects: send request err: %w", err)
 		} else {
 			defer resp.Body.Close()
-			if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+			if bs, err := io.ReadAll(resp.Body); err != nil {
 				return fmt.Errorf("KodoClient.deleteObjects: read response err: %w", err)
 			} else if resp.StatusCode == http.StatusOK || resp.StatusCode == 298 {
 				return nil
-			} else if errBody, err := parseKodoErrorFromResponseBody(bytes); err != nil {
+			} else if errBody, err := parseKodoErrorFromResponseBody(bs); err != nil {
 				return err
 			} else if errBody != nil {
 				return errBody
@@ -668,18 +671,18 @@ func (client *KodoClient) deleteObjects(ctx context.Context, bucketName string, 
 }
 
 func (client *KodoClient) DeleteBucket(ctx context.Context, bucketName string) error {
-	url := client.ucUrl.String() + "/drop/" + bucketName
-	if request, err := http.NewRequest(http.MethodPost, url, http.NoBody); err != nil {
+	requestUrl := client.ucUrl.String() + "/drop/" + bucketName
+	if request, err := http.NewRequest(http.MethodPost, requestUrl, http.NoBody); err != nil {
 		return fmt.Errorf("KodoClient.DeleteBucket: create request err: %w", err)
 	} else if resp, err := client.httpClient.Do(request.WithContext(ctx)); err != nil {
 		return fmt.Errorf("KodoClient.DeleteBucket: send request err: %w", err)
 	} else {
 		defer resp.Body.Close()
-		if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
 			return fmt.Errorf("KodoClient.DeleteBucket: read response err: %w", err)
 		} else if resp.StatusCode == http.StatusOK {
 			return nil
-		} else if errBody, err := parseKodoErrorFromResponseBody(bytes); err != nil {
+		} else if errBody, err := parseKodoErrorFromResponseBody(bs); err != nil {
 			return err
 		} else if errBody != nil {
 			return errBody
@@ -856,6 +859,7 @@ func (client *KodoClient) fromKodoRegionIDToS3RegionID(ctx context.Context, regi
 	}
 }
 
+// GetRegions 通过UC域名获取所有Region的域名信息
 func (client *KodoClient) GetRegions(ctx context.Context) ([]*Region, error) {
 	cacheKey := fmt.Sprintf("cacheKey-%s-%s-%s-regions", client.accessKey, client.secretKey, client.ucUrl)
 	if value, err := getCacheValueByKey(cacheKey, 24*time.Hour, func() (interface{}, error) {
@@ -871,22 +875,22 @@ func (client *KodoClient) getRegions(ctx context.Context) ([]*Region, error) {
 	var response struct {
 		Regions []*Region `json:"regions"`
 	}
-	url := client.ucUrl.String() + "/regions"
-	if request, err := http.NewRequest(http.MethodGet, url, http.NoBody); err != nil {
+	requestUrl := client.ucUrl.String() + "/regions"
+	if request, err := http.NewRequest(http.MethodGet, requestUrl, http.NoBody); err != nil {
 		return nil, fmt.Errorf("KodoClient.getRegions: create request err: %w", err)
 	} else if resp, err := client.httpClient.Do(request.WithContext(ctx)); err != nil {
 		return nil, fmt.Errorf("KodoClient.getRegions: send request err: %w", err)
 	} else {
 		defer resp.Body.Close()
-		if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
 			return nil, fmt.Errorf("KodoClient.getRegions: read response err: %w", err)
 		} else if resp.StatusCode == http.StatusOK {
-			if err = json.Unmarshal(bytes, &response); err != nil {
+			if err = json.Unmarshal(bs, &response); err != nil {
 				return nil, fmt.Errorf("KodoClient.getRegions: parse response body err: %w", err)
 			} else {
 				return response.Regions, nil
 			}
-		} else if errBody, err := parseKodoErrorFromResponseBody(bytes); err != nil {
+		} else if errBody, err := parseKodoErrorFromResponseBody(bs); err != nil {
 			return nil, err
 		} else if errBody != nil {
 			return nil, errBody
@@ -950,22 +954,22 @@ func (client *KodoClient) GetBuckets(ctx context.Context) ([]*Bucket, error) {
 
 func (client *KodoClient) getBuckets(ctx context.Context) ([]*Bucket, error) {
 	var response []*Bucket
-	url := client.ucUrl.String() + "/v2/buckets?shared=rd"
-	if request, err := http.NewRequest(http.MethodGet, url, http.NoBody); err != nil {
+	requestUrl := client.ucUrl.String() + "/v2/buckets?shared=rd"
+	if request, err := http.NewRequest(http.MethodGet, requestUrl, http.NoBody); err != nil {
 		return nil, fmt.Errorf("KodoClient.getBuckets: create request err: %w", err)
 	} else if resp, err := client.httpClient.Do(request.WithContext(ctx)); err != nil {
 		return nil, fmt.Errorf("KodoClient.getBuckets: send request err: %w", err)
 	} else {
 		defer resp.Body.Close()
-		if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
 			return nil, fmt.Errorf("KodoClient.getBuckets: read response err: %w", err)
 		} else if resp.StatusCode == http.StatusOK {
-			if err = json.Unmarshal(bytes, &response); err != nil {
+			if err = json.Unmarshal(bs, &response); err != nil {
 				return nil, fmt.Errorf("KodoClient.getBuckets: parse response body err: %w", err)
 			} else {
 				return response, nil
 			}
-		} else if errBody, err := parseKodoErrorFromResponseBody(bytes); err != nil {
+		} else if errBody, err := parseKodoErrorFromResponseBody(bs); err != nil {
 			return nil, err
 		} else if errBody != nil {
 			return nil, errBody

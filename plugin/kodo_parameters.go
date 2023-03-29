@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/qiniu/csi-driver/qiniu"
+	"github.com/qiniu/kubernetes-csi-driver/qiniu"
 )
 
 const (

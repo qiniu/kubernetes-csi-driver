@@ -1,4 +1,4 @@
-VERSION = $(shell git describe --tags HEAD)
+VERSION = $(shell git describe --tags HEAD || echo "NO_VERSION_TAG")
 COMMIT_ID = $(shell git rev-parse --short HEAD || echo "HEAD")
 BUILD_TIME = $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 CONNECTOR_FILENAME = connector.plugin.storage.qiniu.com

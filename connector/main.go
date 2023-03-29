@@ -16,7 +16,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/qiniu/csi-driver/protocol"
+	"github.com/qiniu/kubernetes-csi-driver/protocol"
 	daemon "github.com/sevlyar/go-daemon"
 	log "github.com/sirupsen/logrus"
 )

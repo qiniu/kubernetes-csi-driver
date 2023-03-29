@@ -15,7 +15,7 @@ import (
 	"strconv"
 
 	"github.com/Unknwon/goconfig"
-	"github.com/qiniu/csi-driver/protocol"
+	"github.com/qiniu/kubernetes-csi-driver/protocol"
 )
 
 const (

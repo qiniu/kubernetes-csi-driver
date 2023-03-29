@@ -1,4 +1,4 @@
-module github.com/qiniu/csi-driver
+module github.com/qiniu/kubernetes-csi-driver
 
 go 1.18
 

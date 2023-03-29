@@ -7,7 +7,7 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	csicommon "github.com/kubernetes-csi/drivers/pkg/csi-common"
-	"github.com/qiniu/csi-driver/qiniu"
+	"github.com/qiniu/kubernetes-csi-driver/qiniu"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

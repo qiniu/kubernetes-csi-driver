@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/qiniu/csi-driver/protocol"
+	"github.com/qiniu/kubernetes-csi-driver/protocol"
 	log "github.com/sirupsen/logrus"
 )
 

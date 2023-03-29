@@ -17,7 +17,7 @@ plugin.storage.qiniu.com can be compiled in a form of a container.
 To build a container and push to Docker Hub:
 
 ```
-$ make
+$ make push_image
 ```
 
 ## Usage

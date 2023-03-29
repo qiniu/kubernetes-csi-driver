@@ -20,3 +20,5 @@
 /docker/plugin.storage.qiniu.com
 /k8s/kodo.yaml
 /k8s/kodofs.yaml
+
+.idea

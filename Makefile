@@ -38,28 +38,6 @@ build_image:
 push_image: build_image
 	docker push "kodoproduct/csi-$(PLUGIN_FILENAME):${VERSION}"
 
-.PHONY: install_kodo_csi_driver
-install_kodo_csi_driver:
-	kubectl apply -f k8s/kodo/
-
-.PHONY: install_kodofs_csi_driver
-install_kodofs_csi_driver:
-	kubectl apply -f k8s/kodofs/
-
-.PHONY: delete_kodo_csi_driver
-delete_kodo_csi_driver:
-	kubectl delete -f k8s/kodo/
-
-.PHONY: delete_kodofs_csi_driver
-delete_kodofs_csi_driver:
-	kubectl delete -f k8s/kodofs/
-
-.PHONY: install_plugins
-install_plugins: install_kodo_csi_driver install_kodofs_csi_driver
-
-.PHONY: delete_plugins
-delete_plugins: delete_kodo_csi_driver delete_kodofs_csi_driver
-
 k8s/kodo.yaml: k8s/kodo/kodo-plugin.yaml k8s/kodo/kodo-rbac.yaml k8s/kodo/kodo-provisioner.yaml
 	@cat k8s/kodo/kodo-plugin.yaml >> k8s/kodo.yaml
 	@echo --- >> k8s/kodo.yaml
@@ -76,3 +54,25 @@ k8s/kodofs.yaml: k8s/kodofs/kodofs-plugin.yaml k8s/kodofs/kodofs-rbac.yaml k8s/k
 
 .PHONY: combine_csi_driver_yaml
 combine_csi_driver_yaml: k8s/kodo.yaml k8s/kodofs.yaml
+
+.PHONY: install_kodo_csi_driver
+install_kodo_csi_driver: k8s/kodo.yaml
+	kubectl apply -f $<
+
+.PHONY: install_kodofs_csi_driver
+install_kodofs_csi_driver: k8s/kodofs.yaml
+	kubectl apply -f $<
+
+.PHONY: delete_kodo_csi_driver
+delete_kodo_csi_driver: k8s/kodo.yaml
+	kubectl delete -f $<
+
+.PHONY: delete_kodofs_csi_driver
+delete_kodofs_csi_driver: k8s/kodofs.yaml
+	kubectl delete -f $<
+
+.PHONY: install_plugins
+install_plugins: install_kodo_csi_driver install_kodofs_csi_driver
+
+.PHONY: delete_plugins
+delete_plugins: delete_kodo_csi_driver delete_kodofs_csi_driver

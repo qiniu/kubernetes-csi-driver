@@ -26,6 +26,7 @@ plugin/$(PLUGIN_FILENAME):
 clean:
 	rm -f connector/$(CONNECTOR_FILENAME) \
 		plugin/$(PLUGIN_FILENAME)
+	rm -f k8s/kodo.yaml k8s/kodofs.yaml
 
 .PHONY: build_image
 build_image:
@@ -58,3 +59,20 @@ install_plugins: install_kodo_csi_driver install_kodofs_csi_driver
 
 .PHONY: delete_plugins
 delete_plugins: delete_kodo_csi_driver delete_kodofs_csi_driver
+
+k8s/kodo.yaml: k8s/kodo/kodo-plugin.yaml k8s/kodo/kodo-rbac.yaml k8s/kodo/kodo-provisioner.yaml
+	@cat k8s/kodo/kodo-plugin.yaml >> k8s/kodo.yaml
+	@echo --- >> k8s/kodo.yaml
+	@cat k8s/kodo/kodo-rbac.yaml >> k8s/kodo.yaml
+	@echo --- >> k8s/kodo.yaml
+	@cat k8s/kodo/kodo-provisioner.yaml >> k8s/kodo.yaml
+
+k8s/kodofs.yaml: k8s/kodofs/kodofs-plugin.yaml k8s/kodofs/kodofs-rbac.yaml k8s/kodofs/kodofs-provisioner.yaml
+	@cat k8s/kodofs/kodofs-plugin.yaml >> k8s/kodofs.yaml
+	@echo --- >> k8s/kodofs.yaml
+	@cat k8s/kodofs/kodofs-rbac.yaml >> k8s/kodofs.yaml
+	@echo --- >> k8s/kodofs.yaml
+	@cat k8s/kodofs/kodofs-provisioner.yaml >> k8s/kodofs.yaml
+
+.PHONY: combine_csi_driver_yaml
+combine_csi_driver_yaml: k8s/kodo.yaml k8s/kodofs.yaml

@@ -11,7 +11,7 @@ jobs:
   build-docker-image:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - name: Apt install
         run: sudo apt-get install -y docker.io make
@@ -22,7 +22,7 @@ jobs:
   build-executable:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - name: Apt install
         run: sudo apt-get install -y git make

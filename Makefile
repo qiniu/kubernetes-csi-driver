@@ -36,3 +36,25 @@ build_image:
 .PHONY: push_image
 push_image: build_image
 	docker push "kodoproduct/csi-$(PLUGIN_FILENAME):${VERSION}"
+
+.PHONY: install_kodo_csi_driver
+install_kodo_csi_driver:
+	kubectl apply -f k8s/kodo/
+
+.PHONY: install_kodofs_csi_driver
+install_kodofs_csi_driver:
+	kubectl apply -f k8s/kodofs/
+
+.PHONY: delete_kodo_csi_driver
+delete_kodo_csi_driver:
+	kubectl delete -f k8s/kodo/
+
+.PHONY: delete_kodofs_csi_driver
+delete_kodofs_csi_driver:
+	kubectl delete -f k8s/kodofs/
+
+.PHONY: install_plugins
+install_plugins: install_kodo_csi_driver install_kodofs_csi_driver
+
+.PHONY: delete_plugins
+delete_plugins: delete_kodo_csi_driver delete_kodofs_csi_driver

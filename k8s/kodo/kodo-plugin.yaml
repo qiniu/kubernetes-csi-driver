@@ -1,5 +1,5 @@
-apiVersion: storage.k8s.io/v1
 kind: CSIDriver
+apiVersion: storage.k8s.io/v1
 metadata:
   name: kodoplugin.storage.qiniu.com
 spec:
@@ -22,7 +22,7 @@ spec:
     spec:
       serviceAccount: sa.kodoplugin.storage.qiniu.com
       tolerations:
-      - operator: Exists
+        - operator: Exists
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-node-critical
@@ -45,10 +45,10 @@ spec:
           livenessProbe:
             exec:
               command:
-              - /csi-node-driver-registrar
-              - --plugin-registration-path=/registration
-              - --kubelet-registration-path=/var/lib/kubelet/csi-plugins/kodoplugin.storage.qiniu.com/csi.sock
-              - --mode=kubelet-registration-probe
+                - /csi-node-driver-registrar
+                - --plugin-registration-path=/registration
+                - --kubelet-registration-path=/var/lib/kubelet/csi-plugins/kodoplugin.storage.qiniu.com/csi.sock
+                - --mode=kubelet-registration-probe
             initialDelaySeconds: 30
             timeoutSeconds: 15
         - name: kodo-plugin

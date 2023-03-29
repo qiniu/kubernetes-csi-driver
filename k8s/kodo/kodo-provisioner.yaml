@@ -15,17 +15,17 @@ spec:
     spec:
       serviceAccount: sa.kodoplugin.storage.qiniu.com
       tolerations:
-      - operator: Exists
+        - operator: Exists
       nodeSelector:
         kubernetes.io/os: linux
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 1
-            preference:
-              matchExpressions:
-              - key: node-role.kubernetes.io/master
-                operator: Exists
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: Exists
       priorityClassName: system-node-critical
       hostNetwork: true
       containers:

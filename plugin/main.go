@@ -68,10 +68,6 @@ func main() {
 		log.Errorf("Please make sure umount is installed in PATH: %s", err)
 		os.Exit(1)
 	}
-	if err := ensureCommandExists("findmnt"); err != nil {
-		log.Errorf("Please make sure findmnt is installed in PATH: %s", err)
-		os.Exit(1)
-	}
 	if proto, addr, err := csicommon.ParseEndpoint(*endpoint); err != nil {
 		log.Errorf("Invalid endpoint: %s", err)
 		os.Exit(1)

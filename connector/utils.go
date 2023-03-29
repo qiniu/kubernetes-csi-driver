@@ -39,6 +39,7 @@ const (
 	RCLONE_CONFIG_BOOL_TRUE             = "true"
 )
 
+// 可跨平台的获取log存放的目录函数
 func userLogDir() (string, error) {
 	var dir string
 
@@ -79,6 +80,7 @@ func rcloneCacheId(items ...string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
+// 确保目标目录路径存在，如果不存在则创建，如果存在但不是目录则返回错误
 func ensureDirectoryExists(path string) error {
 	if fileInfo, err := os.Stat(path); os.IsNotExist(err) {
 		return os.MkdirAll(path, 0700)
@@ -88,6 +90,7 @@ func ensureDirectoryExists(path string) error {
 	return nil
 }
 
+// 确保目标文件不存在，如果存在则删除
 func ensureFileNotExists(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return nil
@@ -96,6 +99,7 @@ func ensureFileNotExists(path string) error {
 	}
 }
 
+// 确保目标可执行文件在PATH中存在，如果不存在则返回错误
 func ensureCommandExists(name string) error {
 	_, err := exec.LookPath(name)
 	if err != nil {
@@ -105,6 +109,7 @@ func ensureCommandExists(name string) error {
 	}
 }
 
+// 用于持久化rclone挂载相关的配置
 func writeRcloneConfig(cmd *protocol.InitKodoMountCmd) (string, error) {
 	config, _ := goconfig.LoadFromReader(bytes.NewReader([]byte{}))
 
@@ -140,6 +145,7 @@ func init() {
 	osKernelRegexp = regexp.MustCompile(`\-\s+os/kernel:\s+([^\s]+)`)
 }
 
+// 获取并解析 rclone 版本信息
 func getRcloneVersion() (rcloneVersion, osVersion, osKernel string, err error) {
 	output, err := exec.Command(RcloneCmd, "version").Output()
 	if err != nil {

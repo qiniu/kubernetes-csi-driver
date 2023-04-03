@@ -46,3 +46,10 @@ func TestKodoClient_CreateAndDeleteBucket(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 }
+
+func TestKodoClient_GetRegions(t *testing.T) {
+	kodoClient := getKodoClient()
+	regions, err := kodoClient.GetRegions(context.Background())
+	assert.NoError(t, err)
+	assert.NotEmpty(t, regions)
+}

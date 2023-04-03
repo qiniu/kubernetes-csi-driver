@@ -256,7 +256,8 @@ func mountKodoFS(gatewayID, mountPath string, mountServerAddress *url.URL, acces
 	return nil
 }
 
-func mountKodo(volumeId, mountPath, subDir, accessKey, secretKey, bucketId, s3Region, s3Endpoint, storageClass string,
+func mountKodo(volumeId, mountPath, subDir, accessKey, secretKey, bucketId string,
+	s3Region, s3Endpoint, storageClass string, s3ForcePathStyle bool,
 	vfsCacheMode VfsCacheMode, dirCacheDuration *time.Duration, bufferSize *uint64,
 	vfsCacheMaxAge, vfsCachePollInterval, vfsWriteBack *time.Duration, vfsCacheMaxSize, vfsReadAhead *uint64,
 	vfsFastFingerPrint bool, vfsReadChunkSize, vfsReadChunkSizeLimit *uint64,
@@ -296,6 +297,7 @@ func mountKodo(volumeId, mountPath, subDir, accessKey, secretKey, bucketId, s3Re
 		BucketId:           bucketId,
 		S3Region:           s3Region,
 		S3Endpoint:         s3Endpoint,
+		S3ForcePathStyle:   s3ForcePathStyle,
 		StorageClass:       storageClass,
 		VfsCacheMode:       vfsCacheMode.String(),
 		VfsFastFingerPrint: vfsFastFingerPrint,

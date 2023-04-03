@@ -17,6 +17,7 @@ const (
 	FIELD_SUB_DIR                   = "subdir"
 	FIELD_S3_REGION                 = "s3region"
 	FIELD_S3_ENDPOINT               = "s3endpoint"
+	FIELD_S3_FORCE_PATH_STYLE       = "s3forcepathstyle"
 	FIELD_UC_ENDPOINT               = "ucendpoint"
 	FIELD_STORAGE_CLASS             = "storageclass"
 	FIELD_VFS_CACHE_MODE            = "vfscachemode"
@@ -68,10 +69,14 @@ type kodoPvParameter struct {
 	originalAccessKey, originalSecretKey string
 	s3Endpoint                           *url.URL
 	s3Region                             string
+	s3ForcePathStyle                     bool
 }
 
 func parseKodoPvParameter(functionName string, ctx, secrets map[string]string) (param *kodoPvParameter, err error) {
-	var p kodoPvParameter
+	p := kodoPvParameter{
+		// default value
+		s3ForcePathStyle: true,
+	}
 
 	if scp, err := parseKodoStorageClassParameter(functionName, ctx, secrets); err != nil {
 		return nil, err
@@ -99,6 +104,13 @@ func parseKodoPvParameter(functionName string, ctx, secrets map[string]string) (
 			p.s3Region = strings.TrimSpace(value)
 		case FIELD_SUB_DIR:
 			p.subDir = strings.TrimSpace(value)
+		case FIELD_S3_FORCE_PATH_STYLE:
+			if b, ok := parseBool(value); !ok {
+				err = fmt.Errorf("%s: unrecognized %s: %s", functionName, FIELD_S3_FORCE_PATH_STYLE, value)
+				return
+			} else {
+				p.s3ForcePathStyle = b
+			}
 		}
 	}
 	if p.s3Endpoint == nil {

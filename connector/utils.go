@@ -25,6 +25,7 @@ const (
 	RCLONE_CONFIG_KEY_SECRET_KEY          = "secret_access_key"
 	RCLONE_CONFIG_KEY_REGION              = "region"
 	RCLONE_CONFIG_KEY_ENDPOINT            = "endpoint"
+	RCLONE_CONFIG_KEY_FORCE_PATH_STYLE    = "force_path_style"
 	RCLONE_CONFIG_KEY_LOCATION_CONSTRAINT = "location_constraint"
 	RCLONE_CONFIG_KEY_ACL                 = "acl"
 	RCLONE_CONFIG_KEY_STORAGE_CLASS       = "storage_class"
@@ -123,6 +124,8 @@ func writeRcloneConfig(cmd *protocol.InitKodoMountCmd) (string, error) {
 	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_ACL, RCLONE_CONFIG_PUBLIC_READ_WRITE_ACL)
 	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_STORAGE_CLASS, cmd.StorageClass)
 	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_NO_CHECK_BUCKET, RCLONE_CONFIG_BOOL_TRUE)
+	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_FORCE_PATH_STYLE, formatBool(cmd.S3ForcePathStyle))
+
 	if cmd.UploadChunkSize != nil {
 		config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_UPLOAD_CHUNK_SIZE, formatByteSize(*cmd.UploadChunkSize))
 	}
@@ -169,4 +172,8 @@ func formatUint(i uint64) string {
 
 func formatByteSize(i uint64) string {
 	return formatUint(i) + "b"
+}
+
+func formatBool(b bool) string {
+	return strconv.FormatBool(b)
 }

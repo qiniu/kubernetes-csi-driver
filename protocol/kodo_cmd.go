@@ -15,6 +15,7 @@ type InitKodoMountCmd struct {
 	BucketId              string  `json:"bucket_id"`
 	S3Region              string  `json:"s3_region"`
 	S3Endpoint            string  `json:"s3_endpoint"`
+	S3ForcePathStyle      bool    `json:"s3_force_path_style"`
 	StorageClass          string  `json:"storage_class"`
 	VfsCacheMode          string  `json:"vfs_cache_mode,omitempty"`
 	DirCacheDuration      string  `json:"dir_cache_duration,omitempty"`

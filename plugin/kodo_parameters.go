@@ -14,6 +14,7 @@ import (
 const (
 	FIELD_BUCKET_ID                 = "bucketid"
 	FIELD_BUCKET_NAME               = "bucketname"
+	FIELD_SUB_DIR                   = "subdir"
 	FIELD_S3_REGION                 = "s3region"
 	FIELD_S3_ENDPOINT               = "s3endpoint"
 	FIELD_UC_ENDPOINT               = "ucendpoint"
@@ -63,6 +64,7 @@ func (mode VfsCacheMode) String() string {
 type kodoPvParameter struct {
 	kodoStorageClassParameter
 	bucketID, bucketName                 string
+	subDir                               string
 	originalAccessKey, originalSecretKey string
 	s3Endpoint                           *url.URL
 	s3Region                             string
@@ -95,6 +97,8 @@ func parseKodoPvParameter(functionName string, ctx, secrets map[string]string) (
 			}
 		case FIELD_S3_REGION:
 			p.s3Region = strings.TrimSpace(value)
+		case FIELD_SUB_DIR:
+			p.subDir = strings.TrimSpace(value)
 		}
 	}
 	if p.s3Endpoint == nil {

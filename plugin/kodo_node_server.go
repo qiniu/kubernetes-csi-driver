@@ -40,7 +40,7 @@ func (server *kodoNodeServer) NodePublishVolume(ctx context.Context, req *csi.No
 	if err = ensureDirectoryCreated(mountPath); err != nil {
 		return nil, fmt.Errorf("NodePublishVolume: create mount path %s error: %w", mountPath, err)
 	}
-	if err = mountKodo(req.GetVolumeId(), mountPath, "", parameter.accessKey, parameter.secretKey,
+	if err = mountKodo(req.GetVolumeId(), mountPath, parameter.subDir, parameter.accessKey, parameter.secretKey,
 		parameter.bucketID, parameter.s3Region, parameter.s3Endpoint.String(), parameter.storageClass,
 		parameter.vfsCacheMode, parameter.dirCacheDuration, parameter.bufferSize,
 		parameter.vfsCacheMaxAge, parameter.vfsCachePollInterval, parameter.vfsWriteBack, parameter.vfsCacheMaxSize,

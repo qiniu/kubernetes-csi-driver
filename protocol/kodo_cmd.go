@@ -3,7 +3,9 @@ package protocol
 import (
 	"context"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"os/exec"
+	"strings"
 )
 
 type InitKodoMountCmd struct {
@@ -143,6 +145,8 @@ func (c *InitKodoMountCmd) ExecCommand(ctx context.Context) *exec.Cmd {
 
 	// 拼接本地挂载点
 	args = append(args, c.MountPath)
+
+	log.Infof("rclone mount command: %s %s", RcloneCmd, strings.Join(args, " "))
 
 	// 执行挂载命令
 	return exec.CommandContext(ctx, RcloneCmd, args...)

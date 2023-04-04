@@ -78,12 +78,14 @@ func parseKodoPvParameter(functionName string, ctx, secrets map[string]string) (
 		s3ForcePathStyle: true,
 	}
 
+	// 先解析 storage class 参数
 	if scp, err := parseKodoStorageClassParameter(functionName, ctx, secrets); err != nil {
 		return nil, err
 	} else {
 		p.kodoStorageClassParameter = *scp
 	}
 
+	// 再从 ctx 里解析 pv 参数
 	for key, value := range ctx {
 		key = strings.ToLower(key)
 		switch key {
@@ -113,6 +115,8 @@ func parseKodoPvParameter(functionName string, ctx, secrets map[string]string) (
 			}
 		}
 	}
+
+	// ctx中未解析到的参数，尝试从secrets中解析
 	if p.s3Endpoint == nil {
 		if value, ok := secrets[FIELD_S3_ENDPOINT]; ok {
 			if p.s3Endpoint, err = parseUrl(value); err != nil {
@@ -136,7 +140,22 @@ func parseKodoPvParameter(functionName string, ctx, secrets map[string]string) (
 			p.bucketName = strings.TrimSpace(value)
 		}
 	}
-
+	if p.subDir == "" {
+		if value, ok := secrets[FIELD_SUB_DIR]; ok {
+			p.subDir = strings.TrimSpace(value)
+		}
+	}
+	// 默认值就是true，如果是默认值，再检查一下secrets中是否设置了
+	if p.s3ForcePathStyle {
+		if value, ok := secrets[FIELD_S3_FORCE_PATH_STYLE]; ok {
+			if b, ok := parseBool(value); !ok {
+				err = fmt.Errorf("%s: unrecognized %s: %s", functionName, FIELD_S3_FORCE_PATH_STYLE, value)
+				return
+			} else {
+				p.s3ForcePathStyle = b
+			}
+		}
+	}
 	client := qiniu.NewKodoClient(p.accessKey, p.secretKey, p.ucEndpoint, VERSION, COMMITID)
 
 	if p.bucketID == "" {

@@ -1,8 +1,4 @@
-VERSION = $(shell git describe --tags HEAD || echo "NO_VERSION_TAG")
-COMMIT_ID = $(shell git rev-parse --short HEAD || echo "HEAD")
-BUILD_TIME = $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
-CONNECTOR_FILENAME = connector.plugin.storage.qiniu.com
-PLUGIN_FILENAME = plugin.storage.qiniu.com
+include common.mk
 
 .PHONY: all
 all: build
@@ -31,22 +27,30 @@ clean:
 .PHONY: build_image
 build_image:
 	docker build --pull \
-		-t="kodoproduct/csi-$(PLUGIN_FILENAME):${VERSION}" \
+		-t="$(DOCKERHUB_ORGANIZATION)/csi-$(PLUGIN_FILENAME):$(VERSION)" \
 		-f Dockerfile .
 
 .PHONY: push_image
 push_image: build_image
-	docker push "kodoproduct/csi-$(PLUGIN_FILENAME):${VERSION}"
+	docker push "$(DOCKERHUB_ORGANIZATION)/csi-$(PLUGIN_FILENAME):${VERSION}"
 
 k8s/kodo.yaml: k8s/kodo/kodo-plugin.yaml k8s/kodo/kodo-rbac.yaml k8s/kodo/kodo-provisioner.yaml
-	@cat k8s/kodo/kodo-plugin.yaml >> k8s/kodo.yaml
+	@cat k8s/kodo/kodo-plugin.yaml \
+		| sed 's/$${DOCKERHUB_ORGANIZATION}/$(DOCKERHUB_ORGANIZATION)/g' \
+		| sed 's/$${DOCKERHUB_IMAGE}/$(DOCKERHUB_IMAGE)/g' \
+		| sed 's/$${DOCKERHUB_TAG}/$(DOCKERHUB_TAG)/g' \
+		>> k8s/kodo.yaml
 	@echo --- >> k8s/kodo.yaml
 	@cat k8s/kodo/kodo-rbac.yaml >> k8s/kodo.yaml
 	@echo --- >> k8s/kodo.yaml
 	@cat k8s/kodo/kodo-provisioner.yaml >> k8s/kodo.yaml
 
 k8s/kodofs.yaml: k8s/kodofs/kodofs-plugin.yaml k8s/kodofs/kodofs-rbac.yaml k8s/kodofs/kodofs-provisioner.yaml
-	@cat k8s/kodofs/kodofs-plugin.yaml >> k8s/kodofs.yaml
+	@cat k8s/kodofs/kodofs-plugin.yaml \
+		| sed 's/$${DOCKERHUB_ORGANIZATION}/$(DOCKERHUB_ORGANIZATION)/g' \
+		| sed 's/$${DOCKERHUB_IMAGE}/$(DOCKERHUB_IMAGE)/g' \
+		| sed 's/$${DOCKERHUB_TAG}/$(DOCKERHUB_TAG)/g' \
+		>> k8s/kodofs.yaml
 	@echo --- >> k8s/kodofs.yaml
 	@cat k8s/kodofs/kodofs-rbac.yaml >> k8s/kodofs.yaml
 	@echo --- >> k8s/kodofs.yaml

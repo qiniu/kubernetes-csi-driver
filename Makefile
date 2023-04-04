@@ -27,12 +27,12 @@ clean:
 .PHONY: build_image
 build_image:
 	docker build --pull \
-		-t="$(DOCKERHUB_ORGANIZATION)/csi-$(PLUGIN_FILENAME):$(VERSION)" \
+		-t="$(DOCKERHUB_ORGANIZATION)/$(DOCKERHUB_IMAGE):$(VERSION)" \
 		-f Dockerfile .
 
 .PHONY: push_image
 push_image: build_image
-	docker push "$(DOCKERHUB_ORGANIZATION)/csi-$(PLUGIN_FILENAME):${VERSION}"
+	docker push "$(DOCKERHUB_ORGANIZATION)/$(DOCKERHUB_IMAGE):$(VERSION)"
 
 k8s/kodo.yaml: k8s/kodo/kodo-plugin.yaml k8s/kodo/kodo-rbac.yaml k8s/kodo/kodo-provisioner.yaml
 	@cat k8s/kodo/kodo-plugin.yaml \

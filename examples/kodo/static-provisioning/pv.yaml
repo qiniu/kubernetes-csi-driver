@@ -18,6 +18,7 @@ spec:
       # uploadchunksize: "5242880"        # Chunk size to use for uploading. (default 5 MB)
       # uploadconcurrency: "4"            # Concurrency for multipart uploads. This is the number of chunks of the same file that are uploaded concurrently. (default 4)
       # vfscachemode: "off"               # Cache mode off|minimal|writes|full (default off)
+      # s3forcepathstyle: "true"          # Force path style requests. (default true)
     nodePublishSecretRef:
       name: kodo-csi-pv-secret
       namespace: default

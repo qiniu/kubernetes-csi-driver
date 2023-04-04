@@ -139,7 +139,7 @@ func (c *InitKodoMountCmd) ExecCommand(ctx context.Context) *exec.Cmd {
 	args = append(args, mountFlags...)
 
 	// 拼接要挂载的目标bucket与其bucket内部的路径
-	args = append(args, fmt.Sprintf("%s:%s/%s", c.VolumeId, c.BucketId, c.SubDir))
+	args = append(args, fmt.Sprintf("%s:%s/%s", c.VolumeId, c.BucketId, normalizeDirKey(c.SubDir)))
 
 	// 拼接本地挂载点
 	args = append(args, c.MountPath)

@@ -1,10 +1,10 @@
-# Qiniu CSI Plugin
+# Qiniu Kubernetes CSI Plugin
 
 CSI Plugin for Kubernetes, Support Qiniu Cloud Storage.
 
 ## Introduction
 
-Qiniu CSI Plugin implement an interface between CSI enabled Container Orchestrator and Qiniu Cloud Storage. You can create a PV with CSI configuration, and the PVC, Deployment defines as usual.
+Qiniu Kubernetes CSI Plugin implement an interface between CSI enabled Container Orchestrator and Qiniu Cloud Storage. You can create a PV with CSI configuration, and the PVC, Deployment defines as usual.
 
 ## Configuration Requirements
 
@@ -22,9 +22,9 @@ $ make push_image
 
 ## Usage
 
-### Use Kodo CSI Plugin
+### Use Qiniu Kubernetes CSI Plugin
 
-#### Step 1: Create CSI Plugin
+#### Step 1: Create Qiniu Kubernetes CSI Plugin
 
 ```sh
 $ kubectl create -f ./k8s/kodo/

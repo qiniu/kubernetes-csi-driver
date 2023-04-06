@@ -40,7 +40,7 @@ jobs:
         run: make k8s/kodo.yaml && make k8s/kodofs.yaml
 
       - name: Upload kodo.yaml files to Release Asset
-        id: upload-release-asset-kodo.yaml
+        id: upload-release-asset-kodo
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -51,7 +51,7 @@ jobs:
           asset_content_type: plain/text
 
       - name: Upload kodofs.yaml files to Release Asset
-        id: upload-release-asset-kodofs.yaml
+        id: upload-release-asset-kodofs
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

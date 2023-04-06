@@ -31,13 +31,16 @@ jobs:
       - uses: actions/checkout@v2
         with:
           ref: ${{ github.ref }}
+
       - name: Get the version
         id: vars
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+
       - name: build
         run: make k8s/kodo.yaml && make k8s/kodofs.yaml
+
       - name: Upload kodo.yaml files to Release Asset
-        id: upload-release-asset
+        id: upload-release-asset-kodo.yaml
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -48,7 +51,7 @@ jobs:
           asset_content_type: plain/text
 
       - name: Upload kodofs.yaml files to Release Asset
-        id: upload-release-asset
+        id: upload-release-asset-kodofs.yaml
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

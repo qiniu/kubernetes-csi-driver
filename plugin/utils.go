@@ -459,7 +459,7 @@ func isMounted(mountPath, fsType string) (bool, error) {
 		skip = false
 		// 找到了就直接停止
 		stop = i.Mountpoint == mountPath && i.FSType == fsType
-		return skip, stop
+		return
 	})
 
 	if err != nil {

@@ -16,10 +16,11 @@ k8s 提供了 coredns 插件，
 kubectl -n kube-system edit configmap coredns
 ```
 
-加入 hosts 配置:
+寻找到 hosts 配置所在的段落，在其中加入自定义的 s3 域名解析规则:
 ```text
       hosts {
-          10.10.10.10 <bucketName>.<region>.aaaaaa.bbb
+          ...
+          10.10.10.10 *.<region>.aaaaaa.bbb
           fallthrough
       }
 ```

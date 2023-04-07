@@ -1,4 +1,4 @@
-name: Build 
+name: Build
 
 on:
   push:
@@ -17,11 +17,3 @@ jobs:
 
       - name: Build executable
         run: make build
-
-  build-docker-image:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Build executable
-        run: make build_image

@@ -1,16 +1,17 @@
 # 1. 第一阶段，编译二进制可执行文件
 FROM golang:1.18.10-bullseye as build-env
+
 COPY . /app
 WORKDIR /app
+# 安装依赖
 RUN apt update -yqq && \
     apt install -yqq git make
+# 编译二进制可执行文件
 RUN make build
 
 # 2. 第二阶段，构建最终镜像
 FROM debian:bullseye
 
-ARG KODOFS_VERSION=2.4.18
-ARG RCLONE_VERSION=1.60.1
 ARG PLUGIN_FILENAME=plugin.storage.qiniu.com
 ARG CONNECTOR_FILENAME=connector.${PLUGIN_FILENAME}
 
@@ -20,8 +21,8 @@ COPY --from=build-env /app/connector/${CONNECTOR_FILENAME} /usr/local/bin/${CONN
 
 # 这些文件直接由仓库提供
 COPY docker/nsenter /usr/local/bin/nsenter
-COPY docker/kodofs-v${KODOFS_VERSION} /usr/local/bin/kodofs
-COPY docker/rclone-v${RCLONE_VERSION} /usr/local/bin/rclone
+COPY docker/kodofs /usr/local/bin/kodofs
+COPY docker/rclone /usr/local/bin/rclone
 COPY docker/kodo-csi-connector.service /csiplugin-connector.service
 COPY docker/entrypoint.sh /entrypoint.sh
 

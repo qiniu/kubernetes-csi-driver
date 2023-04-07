@@ -18,6 +18,8 @@
 /plugin/plugin.storage.qiniu.com
 /docker/connector.plugin.storage.qiniu.com
 /docker/plugin.storage.qiniu.com
+/docker/kodofs
+/docker/rclone
 /k8s/kodo.yaml
 /k8s/kodofs.yaml
 

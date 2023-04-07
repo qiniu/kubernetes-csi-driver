@@ -7,3 +7,6 @@ PLUGIN_FILENAME = plugin.storage.qiniu.com
 DOCKERHUB_ORGANIZATION = kodoproduct
 DOCKERHUB_IMAGE = csi-plugin.storage.qiniu.com
 DOCKERHUB_TAG = ${VERSION}
+
+RCLONE_VERSION = v1.62.2
+KODOFS_VERSION = v3.2.9

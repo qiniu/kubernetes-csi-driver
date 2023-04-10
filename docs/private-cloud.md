@@ -33,7 +33,7 @@ S3 协议的 Path Style Endpoint URL 规则为`<domain>/<bucket>`，其中`<doma
 3. 修改`secret.yaml`中的`stringData`配置参数选项`s3forcePathStyle`
 4. 修改`secret.yaml`中的`data`配置选项，注意`data`下的所有字符串数据必须是经过base64编码后的字符串数据
    
-s3forcePathStyle选项可设置如下值：
+`s3forcePathStyle`选项可设置如下值：
 1. 使用`s3forcePathStyle: 'false'` 来切换至 Virtual-Hosted Style URL
 2. 使用`s3forcePathStyle: 'true'`来切换至 Path Style URL
 

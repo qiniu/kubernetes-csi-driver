@@ -29,7 +29,7 @@ S3 协议的 Path Style Endpoint URL 规则为`<domain>/<bucket>`，其中`<doma
 
 七牛 CSI 插件的 S3 Endpoint 的 URL Style 可通过如下几种方式任选一种进行配置：
 1. 使用`static-provisioning`时，修改`pv.yaml`中的`volumeAttributes`配置参数选项`s3forcePathStyle`
-2. 使用``dynamic-provisioning`时，修改`sc.yaml`中的`parameters`配置参数选项`s3forcePathStyle`
+2. 使用`dynamic-provisioning`时，修改`sc.yaml`中的`parameters`配置参数选项`s3forcePathStyle`
 3. 修改`secret.yaml`中的`stringData`配置参数选项`s3forcePathStyle`
 4. 修改`secret.yaml`中的`data`配置选项，注意`data`下的所有字符串数据必须是经过base64编码后的字符串数据
    

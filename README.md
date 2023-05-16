@@ -15,7 +15,7 @@ Qiniu Kubernetes CSI Plugin implement an interface between CSI enabled Container
 plugin.storage.qiniu.com can be compiled in a form of a container.
 
 To build a container and push to Docker Hub:
-Kodofs is private repo, you need to configured GITHUB_API_TOKEN by environment variable to access it.
+Kodofs is private repo, you need to configured `GITHUB_API_TOKEN` by environment variable to access it.
 ```
 $ export GITHUB_API_TOKEN=<your github api token>
 $ make push_image

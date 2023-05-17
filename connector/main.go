@@ -31,7 +31,7 @@ const (
 	// Connector name
 	ConnectorName = "connector.csi-plugin.storage.qiniu.com"
 	// Fusermount executable name
-	FusermountCmd = "fusermount"
+	FusermountCmd = "fusermount3"
 	// KodoFS executable name
 	KodoFSCmd = protocol.KodoFSCmd
 	// Rclone executable name
@@ -123,7 +123,7 @@ func main() {
 		os.Exit(1)
 	}
 	if err := ensureCommandExists(FusermountCmd); err != nil {
-		log.Errorf("Please make sure fusermount is installed in PATH: %s", err)
+		log.Errorf("Please make sure fusermount3 is installed in PATH: %s", err)
 		os.Exit(1)
 	}
 

@@ -115,7 +115,6 @@ func writeRcloneConfig(cmd *protocol.InitKodoMountCmd) (string, error) {
 	config, _ := goconfig.LoadFromReader(bytes.NewReader([]byte{}))
 
 	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_TYPE, RCLONE_CONFIG_S3_TYPE)
-	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_PROVIDER, RCLONE_CONFIG_QINIU_PROVIDER)
 	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_ACCESS_KEY, cmd.AccessKey)
 	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_SECRET_KEY, cmd.SecretKey)
 	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_REGION, cmd.S3Region)

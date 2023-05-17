@@ -25,9 +25,9 @@ clean:
 	rm -f k8s/kodo.yaml k8s/kodofs.yaml
 	rm -f docker/rclone docker/kodofs
 
-k8s/kodo.yaml: k8s/kodo/kodo-plugin.yaml k8s/kodo/kodo-rbac.yaml k8s/kodo/kodo-provisioner.yaml
+k8s/kodo.yaml: k8s/kodo/kodo-plugin.yaml k8s/kodo/kodo-rbac.yaml k8s/kodo/kodo-provisioner.yaml common.mk
 	@cat k8s/kodo/kodo-plugin.yaml \
-		| sed 's/$${DOCKERHUB_ORGANIZATION}/$(DOCKERHUB_ORGANIZATION)/g' \
+		| sed 's/$${DOCKERHUB_ORGANIZATION}/$(subst /,\/,$(DOCKERHUB_ORGANIZATION))/g' \
 		| sed 's/$${DOCKERHUB_IMAGE}/$(DOCKERHUB_IMAGE)/g' \
 		| sed 's/$${DOCKERHUB_TAG}/$(DOCKERHUB_TAG)/g' \
 		>> k8s/kodo.yaml
@@ -36,9 +36,9 @@ k8s/kodo.yaml: k8s/kodo/kodo-plugin.yaml k8s/kodo/kodo-rbac.yaml k8s/kodo/kodo-p
 	@echo --- >> k8s/kodo.yaml
 	@cat k8s/kodo/kodo-provisioner.yaml >> k8s/kodo.yaml
 
-k8s/kodofs.yaml: k8s/kodofs/kodofs-plugin.yaml k8s/kodofs/kodofs-rbac.yaml k8s/kodofs/kodofs-provisioner.yaml
+k8s/kodofs.yaml: k8s/kodofs/kodofs-plugin.yaml k8s/kodofs/kodofs-rbac.yaml k8s/kodofs/kodofs-provisioner.yaml common.mk
 	@cat k8s/kodofs/kodofs-plugin.yaml \
-		| sed 's/$${DOCKERHUB_ORGANIZATION}/$(DOCKERHUB_ORGANIZATION)/g' \
+		| sed 's/$${DOCKERHUB_ORGANIZATION}/$(subst /,\/,$(DOCKERHUB_ORGANIZATION))/g' \
 		| sed 's/$${DOCKERHUB_IMAGE}/$(DOCKERHUB_IMAGE)/g' \
 		| sed 's/$${DOCKERHUB_TAG}/$(DOCKERHUB_TAG)/g' \
 		>> k8s/kodofs.yaml
@@ -86,7 +86,7 @@ docker/kodofs:
 			echo "Please configure environment GITHUB_API_TOKEN"; \
 			exit 1; \
 	fi
-	cd scripts && sh get_gh_asset.sh qbox kodofs $(KODOFS_VERSION) kodofs
+	cd scripts && bash get_gh_asset.sh qbox kodofs $(KODOFS_VERSION) kodofs
 	mv scripts/kodofs docker/kodofs
 
 

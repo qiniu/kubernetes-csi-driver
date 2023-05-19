@@ -113,6 +113,8 @@ func (cs *kodoControllerServer) CreateVolume(ctx context.Context, req *csi.Creat
 		FIELD_BUCKET_NAME:         bucket.Name,
 		FIELD_S3_ENDPOINT:         s3Endpoint.String(),
 		FIELD_S3_REGION:           *s3RegionId,
+		FIELD_S3_FORCE_PATH_STYLE: formatBool(parameter.s3ForcePathStyle),
+		FIELD_SUB_DIR:             parameter.subDir,
 		FIELD_ACCESS_KEY:          parameter.accessKey,
 		FIELD_SECRET_KEY:          parameter.secretKey,
 		FIELD_ORIGINAL_ACCESS_KEY: originalAccessKey,

@@ -4,7 +4,7 @@ set -e
 
 HOST_CMD="/usr/local/bin/nsenter --all --target 1 --"
 
-rm -f /host/usr/local/bin/kodofs /host/usr/local/bin/connector.plugin.storage.qiniu.com
+rm -f /host/usr/local/bin/kodofs /host/usr/local/bin/connector.plugin.storage.qiniu.com /host/usr/local/bin/rclone
 cp /usr/local/bin/kodofs /host/usr/local/bin/kodofs
 cp /usr/local/bin/rclone /host/usr/local/bin/rclone
 cp /usr/local/bin/connector.plugin.storage.qiniu.com /host/usr/local/bin/connector.plugin.storage.qiniu.com

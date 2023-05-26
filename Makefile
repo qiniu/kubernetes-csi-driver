@@ -99,3 +99,54 @@ build_image: docker/rclone docker/kodofs
 .PHONY: push_image
 push_image: build_image
 	docker push "$(DOCKERHUB_ORGANIZATION)/$(DOCKERHUB_IMAGE):$(VERSION)"
+
+.PHONY: install_kodo_static_example
+install_kodo_static_example: k8s/kodo.yaml
+	kubectl apply -f k8s/kodo.yaml
+	kubectl apply -f examples/kodo/static-provisioning/
+	kubectl apply -f examples/kodo/deploy.yaml
+
+.PHONY: delete_kodo_static_example
+delete_kodo_static_example:
+	kubectl delete -f examples/kodo/deploy.yaml || true
+	kubectl delete -f examples/kodo/static-provisioning/ || true
+	kubectl delete -f k8s/kodo.yaml || true
+
+.PHONY: install_kodo_dynamic_example
+install_kodo_dynamic_example: k8s/kodo.yaml
+	kubectl apply -f k8s/kodo.yaml
+	kubectl apply -f examples/kodo/dynamic-provisioning/
+	kubectl apply -f examples/kodo/deploy.yaml
+
+.PHONY: delete_kodo_dynamic_example
+delete_kodo_dynamic_example:
+	kubectl delete -f examples/kodo/deploy.yaml || true
+	kubectl delete -f examples/kodo/dynamic-provisioning/ || true
+	kubectl delete -f k8s/kodo.yaml || true
+
+.PHONY: install_kodofs_static_example
+install_kodofs_static_example: k8s/kodofs.yaml
+	kubectl apply -f k8s/kodofs.yaml
+	kubectl apply -f examples/kodofs/static-provisioning/
+	kubectl apply -f examples/kodofs/deploy.yaml
+
+.PHONY: delete_kodofs_static_example
+delete_kodofs_static_example:
+	kubectl delete -f examples/kodofs/deploy.yaml || true
+	kubectl delete -f examples/kodofs/static-provisioning/ || true
+	kubectl delete -f k8s/kodofs.yaml || true
+
+.PHONY: install_kodofs_dynamic_example
+install_kodofs_dynamic_example: k8s/kodofs.yaml
+	kubectl apply -f k8s/kodofs.yaml
+	kubectl apply -f examples/kodofs/dynamic-provisioning/
+	kubectl apply -f examples/kodofs/deploy.yaml
+
+.PHONY: delete_kodofs_dynamic_example
+delete_kodofs_dynamic_example:
+	kubectl delete -f examples/kodofs/deploy.yaml || true
+	kubectl delete -f examples/kodofs/dynamic-provisioning/ || true
+	kubectl delete -f k8s/kodofs.yaml || true
+
+.PHONY: delete_all_examples
+delete_all_examples: delete_kodo_static_example delete_kodo_dynamic_example delete_kodofs_static_example delete_kodofs_dynamic_example

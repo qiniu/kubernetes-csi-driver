@@ -100,6 +100,7 @@ func (cs *kodofsControllerServer) CreateVolume(ctx context.Context, req *csi.Cre
 
 func (cs *kodofsControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
 	volumeId := req.GetVolumeId()
+	log.Infof("DeleteVolume: starting deleting KodoFS volume %s", volumeId)
 
 	pvInfo, err := cs.client.CoreV1().PersistentVolumes().Get(ctx, volumeId, metav1.GetOptions{})
 	if err != nil {

@@ -34,8 +34,10 @@ const (
 	RCLONE_CONFIG_KEY_UPLOAD_CUTOFF       = "upload_cutoff"
 	RCLONE_CONFIG_KEY_UPLOAD_CONCURRENCY  = "upload_concurrency"
 
-	RCLONE_CONFIG_S3_TYPE               = "s3"
-	RCLONE_CONFIG_QINIU_PROVIDER        = "Qiniu"
+	RCLONE_CONFIG_S3_TYPE = "s3"
+
+	// TODO: https://github.com/rclone/rclone/pull/7008
+	RCLONE_CONFIG_QINIU_PROVIDER        = "Other"
 	RCLONE_CONFIG_PUBLIC_READ_WRITE_ACL = "public-read-write"
 	RCLONE_CONFIG_BOOL_TRUE             = "true"
 )
@@ -115,6 +117,7 @@ func writeRcloneConfig(cmd *protocol.InitKodoMountCmd) (string, error) {
 	config, _ := goconfig.LoadFromReader(bytes.NewReader([]byte{}))
 
 	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_TYPE, RCLONE_CONFIG_S3_TYPE)
+	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_PROVIDER, RCLONE_CONFIG_QINIU_PROVIDER)
 	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_ACCESS_KEY, cmd.AccessKey)
 	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_SECRET_KEY, cmd.SecretKey)
 	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_REGION, cmd.S3Region)

@@ -12,6 +12,7 @@ func execOnSystemd(ctx context.Context, unit string, cmd string, args ...string)
 	finalArgs := append([]string{
 		"--no-ask-password",
 		"--unit=" + unit,
+		"--pipe",
 		"--service-type=forking",
 		"--collect",
 		cmd,

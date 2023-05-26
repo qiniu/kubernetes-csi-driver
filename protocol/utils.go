@@ -1,9 +1,29 @@
 package protocol
 
 import (
+	"context"
+	log "github.com/sirupsen/logrus"
+	"os/exec"
 	"strconv"
 	"strings"
 )
+
+func execOnSystemd(ctx context.Context, unit string, cmd string, args ...string) *exec.Cmd {
+	finalArgs := append([]string{
+		"--no-ask-password",
+		"--unit=" + unit,
+		"--service-type=forking",
+		"--collect",
+		cmd,
+	})
+	finalArgs = append(finalArgs, args...)
+	log.Infof("Run command: %s %s", "systemd-run", strings.Join(finalArgs, " "))
+	return exec.CommandContext(
+		ctx,
+		"systemd-run",
+		finalArgs...,
+	)
+}
 
 // formatUint formats an unsigned integer to a human readable string.
 func formatUint(i uint64) string {

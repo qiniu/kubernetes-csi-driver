@@ -129,7 +129,7 @@ func (cs *kodofsControllerServer) DeleteVolume(ctx context.Context, req *csi.Del
 			return nil, fmt.Errorf("DeleteVolume: failed to create temporary mount point: %w", err)
 		} else {
 			defer os.Remove(tempMountPath)
-			if err = mountKodoFSLocally(ctx, parameter.gatewayID, tempMountPath, parameter.mountServerAddress, parameter.accessToken, "/"); err != nil {
+			if err = mountKodoFSLocally(ctx, volumeId, parameter.gatewayID, tempMountPath, parameter.mountServerAddress, parameter.accessToken, "/"); err != nil {
 				return nil, fmt.Errorf("DeleteVolume: failed to to mount kodofs to %s: %w", tempMountPath, err)
 			}
 			defer umount(tempMountPath)

@@ -124,11 +124,12 @@ func redirectToChan(logPrefix string, reader io.Reader, c chan<- string) {
 	}
 }
 
-func mountKodoFSLocally(ctx context.Context, gatewayID, mountPath string, mountServerAddress *url.URL, accessToken, subDir string) error {
+func mountKodoFSLocally(ctx context.Context, volumeId, gatewayID, mountPath string, mountServerAddress *url.URL, accessToken, subDir string) error {
 	outputChan := make(chan string)
 	defer close(outputChan)
 
 	cmd := protocol.InitKodoFSMountCmd{
+		VolumeId:  volumeId,
 		GatewayID: gatewayID,
 		MountPath: mountPath,
 		SubDir:    subDir,
@@ -167,7 +168,7 @@ func mountKodoFSLocally(ctx context.Context, gatewayID, mountPath string, mountS
 	return execCmd.Run()
 }
 
-func mountKodoFS(gatewayID, mountPath string, mountServerAddress *url.URL, accessToken, subDir string) error {
+func mountKodoFS(volumeId, gatewayID, mountPath string, mountServerAddress *url.URL, accessToken, subDir string) error {
 	conn, err := net.Dial("unix", SocketPath)
 	if err != nil {
 		return fmt.Errorf("failed to dial unix socket %s: %w", SocketPath, err)
@@ -202,6 +203,7 @@ func mountKodoFS(gatewayID, mountPath string, mountServerAddress *url.URL, acces
 	}
 
 	if err = writeCmdToConn(encoder, &protocol.InitKodoFSMountCmd{
+		VolumeId:  volumeId,
 		GatewayID: gatewayID,
 		MountPath: mountPath,
 		SubDir:    subDir,

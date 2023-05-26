@@ -149,7 +149,7 @@ func (c *InitKodoMountCmd) ExecCommand(ctx context.Context) *exec.Cmd {
 	log.Infof("rclone mount command: %s %s", RcloneCmd, strings.Join(args, " "))
 
 	// 执行挂载命令
-	return exec.CommandContext(ctx, RcloneCmd, args...)
+	return execOnSystemd(ctx, fmt.Sprintf("run-kodo-rclone-%s.service", c.VolumeId), RcloneCmd, args...)
 }
 
 type KodoUmountCmd struct {

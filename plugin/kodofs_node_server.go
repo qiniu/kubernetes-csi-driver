@@ -39,7 +39,7 @@ func (server *kodofsNodeServer) NodePublishVolume(ctx context.Context, req *csi.
 	if err = ensureDirectoryCreated(mountPath); err != nil {
 		return nil, fmt.Errorf("NodePublishVolume: create mount path %s error: %w", mountPath, err)
 	}
-	if err = mountKodoFS(parameter.gatewayID, mountPath, parameter.mountServerAddress, parameter.accessToken, "/"); err != nil {
+	if err = mountKodoFS(req.VolumeId, parameter.gatewayID, mountPath, parameter.mountServerAddress, parameter.accessToken, "/"); err != nil {
 		return nil, fmt.Errorf("NodePublishVolume: failed to to mount kodofs to %s: %w", mountPath, err)
 	}
 	log.Infof("NodePublishVolume: kodofs volume %s is mounted on %s", req.GetVolumeId(), mountPath)

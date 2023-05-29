@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -90,7 +89,7 @@ func (cs *kodofsControllerServer) CreateVolume(ctx context.Context, req *csi.Cre
 		FIELD_BLOCK_SIZE:            strconv.FormatUint(uint64(parameter.blockSize), 10),
 	}
 	volume := &csi.Volume{
-		CapacityBytes: int64(req.GetCapacityRange().GetRequiredBytes()),
+		CapacityBytes: req.GetCapacityRange().GetRequiredBytes(),
 		VolumeId:      pvName,
 		VolumeContext: volumeContext,
 	}
@@ -126,14 +125,35 @@ func (cs *kodofsControllerServer) DeleteVolume(ctx context.Context, req *csi.Del
 	client := qiniu.NewKodoFSClient(parameter.accessKey, parameter.secretKey, parameter.masterServerAddress, VERSION, COMMITID)
 
 	if persistentVolumeReclaimPolicy == corev1.PersistentVolumeReclaimDelete {
-		if tempMountPath, err := ioutil.TempDir("", "temp-mnt-point-*"); err != nil {
+		if exists, err := client.IsVolumeExists(ctx, volumeId); err != nil {
+			return nil, fmt.Errorf("DeleteVolume: failed to check if volume %s exists: %w", volumeId, err)
+		} else {
+			// 已经不存在了，那么直接认为删除成功
+			if !exists {
+				log.Infof("DeleteVolume: volume %s is not exists, delete successful", volumeId)
+				return &csi.DeleteVolumeResponse{}, nil
+			}
+		}
+		if tempMountPath, err := os.MkdirTemp("", "temp-mnt-point-*"); err != nil {
 			return nil, fmt.Errorf("DeleteVolume: failed to create temporary mount point: %w", err)
 		} else {
-			defer os.Remove(tempMountPath)
+			// 删除临时挂载点
+			defer func(name string) {
+				if err := os.Remove(name); err != nil {
+					log.Warnf("DeleteVolume: failed to remove temporary mount point %s: %v", name, err)
+				}
+			}(tempMountPath)
+
 			if err = mountKodoFSLocally(ctx, volumeId, parameter.gatewayID, tempMountPath, parameter.mountServerAddress, parameter.accessToken, "/"); err != nil {
 				return nil, fmt.Errorf("DeleteVolume: failed to to mount kodofs to %s: %w", tempMountPath, err)
 			}
-			defer umount(tempMountPath)
+
+			// 卸载临时挂载点
+			defer func(mountPath string) {
+				_ = umount(mountPath)
+			}(tempMountPath)
+
+			// 清空临时挂载点
 			if entries, err := os.ReadDir(tempMountPath); err != nil {
 				return nil, fmt.Errorf("DeleteVolume: failed to list all directory entries of %s: %w", tempMountPath, err)
 			} else {
@@ -144,8 +164,14 @@ func (cs *kodofsControllerServer) DeleteVolume(ctx context.Context, req *csi.Del
 					}
 				}
 			}
+
+			// 卸载临时挂载点
 			if err = umount(tempMountPath); err != nil {
-				return nil, fmt.Errorf("DeleteVolume: failed to umount %s: %w", tempMountPath, err)
+				if mounted, err := isKodoFSMounted(tempMountPath); err != nil {
+					return nil, fmt.Errorf("DeleteVolume: failed to check if %s is mounted: %w", tempMountPath, err)
+				} else if mounted {
+					return nil, fmt.Errorf("DeleteVolume: failed to umount %s: %w", tempMountPath, err)
+				}
 			} else if err = client.RemoveAccessPoint(ctx, parameter.accessPointId); err != nil {
 				return nil, fmt.Errorf("DeleteVolume: remove access point %s error: %w", parameter.accessPointId, err)
 			} else if err = client.RemoveVolume(ctx, volumeId); err != nil {
@@ -172,7 +198,7 @@ func (cs *kodofsControllerServer) DeleteVolume(ctx context.Context, req *csi.Del
 	return &csi.DeleteVolumeResponse{}, nil
 }
 
-func (cs *kodofsControllerServer) ControllerExpandVolume(ctx context.Context, req *csi.ControllerExpandVolumeRequest,
+func (cs *kodofsControllerServer) ControllerExpandVolume(context.Context, *csi.ControllerExpandVolumeRequest,
 ) (*csi.ControllerExpandVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "")
 }

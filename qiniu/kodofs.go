@@ -249,12 +249,7 @@ func (client *KodoFSClient) RemoveVolume(ctx context.Context, volumeName string)
 		} else if errBody, err := parseKodoFSErrorFromResponseBody(bs); err != nil {
 			return err
 		} else if errBody != nil {
-			// 如果返回 Volume 不存在，也认为是删除成功，直接返回
-			if errBody.ErrorCode == "VolumeNotExist" {
-				return nil
-			} else {
-				return errBody
-			}
+			return errBody
 		} else {
 			return nil
 		}

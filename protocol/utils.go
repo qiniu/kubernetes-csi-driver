@@ -3,9 +3,11 @@ package protocol
 import (
 	"context"
 	log "github.com/sirupsen/logrus"
+	"math/rand"
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func execOnSystemd(ctx context.Context, unit string, cmd string, args ...string) *exec.Cmd {
@@ -48,4 +50,20 @@ func normalizeDirKey(key string) string {
 		key += "/"
 	}
 	return key
+}
+
+func randomName(n int) string {
+	const choices = "abcdefghijklmnopqrstuvwxyz0123456789"
+	return randomChoices(choices, n)
+}
+
+func randomChoices(choices string, n int) string {
+	choicesCount := len(choices)
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = choices[r.Intn(choicesCount)]
+	}
+	return string(b)
 }

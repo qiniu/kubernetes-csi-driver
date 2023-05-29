@@ -19,7 +19,7 @@ func (*InitKodoFSMountCmd) Command() {}
 func (c *InitKodoFSMountCmd) ExecCommand(ctx context.Context) *exec.Cmd {
 	var args = []string{"mount", c.GatewayID, c.MountPath, "-s", c.SubDir, "--force_reinit"}
 	if c.RunOnSystemd {
-		return execOnSystemd(ctx, fmt.Sprintf("run-kodofs-%s.service", c.VolumeId), KodoFSCmd, args...)
+		return execOnSystemd(ctx, fmt.Sprintf("run-kodofs-%s-%s.service", c.VolumeId, randomName(8)), KodoFSCmd, args...)
 	} else {
 		return exec.CommandContext(ctx, KodoFSCmd, args...)
 	}

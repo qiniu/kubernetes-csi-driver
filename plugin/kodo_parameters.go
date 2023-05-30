@@ -177,7 +177,7 @@ type kodoStorageClassParameter struct {
 	ucEndpoint                                         *url.URL
 	storageClass                                       string
 	subDir                                             string
-	s3ForcePathStyle                                   bool
+	s3ForcePathStyle                                   *bool
 	dirCacheDuration                                   *time.Duration
 	bufferSize                                         *uint64
 	vfsCacheMode                                       VfsCacheMode
@@ -195,9 +195,7 @@ type kodoStorageClassParameter struct {
 }
 
 func parseKodoStorageClassParameter(functionName string, ctx, secrets map[string]string) (param *kodoStorageClassParameter, err error) {
-	p := kodoStorageClassParameter{
-		s3ForcePathStyle: true,
-	}
+	var p kodoStorageClassParameter
 
 	for key, value := range ctx {
 		key = strings.ToLower(key)
@@ -222,7 +220,7 @@ func parseKodoStorageClassParameter(functionName string, ctx, secrets map[string
 				err = fmt.Errorf("%s: unrecognized %s: %s", functionName, FIELD_S3_FORCE_PATH_STYLE, value)
 				return
 			} else {
-				p.s3ForcePathStyle = b
+				p.s3ForcePathStyle = &b
 			}
 		case FIELD_VFS_CACHE_MODE:
 			switch toLower(value) {
@@ -454,14 +452,13 @@ func parseKodoStorageClassParameter(functionName string, ctx, secrets map[string
 			p.subDir = strings.TrimSpace(value)
 		}
 	}
-	// 默认值就是true，如果是默认值，再检查一下secrets中是否设置了
-	if p.s3ForcePathStyle {
+	if p.s3ForcePathStyle == nil {
 		if value, ok := secrets[FIELD_S3_FORCE_PATH_STYLE]; ok {
 			if b, ok := parseBool(value); !ok {
 				err = fmt.Errorf("%s: unrecognized %s: %s", functionName, FIELD_S3_FORCE_PATH_STYLE, value)
 				return
 			} else {
-				p.s3ForcePathStyle = b
+				p.s3ForcePathStyle = &b
 			}
 		}
 	}

@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -59,6 +60,20 @@ var (
 )
 
 func main() {
+	// 开启日志文件名，行号，函数名
+	log.SetReportCaller(true)
+	// 设置日志级别
+	log.SetLevel(log.DebugLevel)
+	// 设置日志格式
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: time.RFC3339,
+		CallerPrettyfier: func(frame *runtime.Frame) (function string, file string) {
+			function = frame.Function
+			file = fmt.Sprintf("%s:%d", filepath.Base(frame.File), frame.Line)
+			return
+		},
+	})
 	flag.Parse()
 
 	log.Infof("CSI Connector Version: %s, CommitID: %s, Build time: %s\n", VERSION, COMMITID, BUILDTIME)

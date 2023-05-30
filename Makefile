@@ -147,6 +147,3 @@ delete_kodofs_dynamic_example:
 	kubectl delete -f examples/kodofs/deploy.yaml || true
 	kubectl delete -f examples/kodofs/dynamic-provisioning/ || true
 	kubectl delete -f k8s/kodofs.yaml || true
-
-.PHONY: delete_all_examples
-delete_all_examples: delete_kodo_static_example delete_kodo_dynamic_example delete_kodofs_static_example delete_kodofs_dynamic_example

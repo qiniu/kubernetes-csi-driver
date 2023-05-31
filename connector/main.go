@@ -12,11 +12,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/qiniu/csi-driver/protocol"
+	"github.com/qiniu/kubernetes-csi-driver/protocol"
 	daemon "github.com/sevlyar/go-daemon"
 	log "github.com/sirupsen/logrus"
 )
@@ -31,7 +32,7 @@ const (
 	// Connector name
 	ConnectorName = "connector.csi-plugin.storage.qiniu.com"
 	// Fusermount executable name
-	FusermountCmd = "fusermount"
+	FusermountCmd = "fusermount3"
 	// KodoFS executable name
 	KodoFSCmd = protocol.KodoFSCmd
 	// Rclone executable name
@@ -39,6 +40,8 @@ const (
 )
 
 var (
+	// 这些变量由编译期通过编译命令动态传入
+
 	// VERSION is CSI Driver Version
 	VERSION = ""
 
@@ -47,15 +50,30 @@ var (
 
 	// BUILDTIME is CSI Driver Buildtime
 	BUILDTIME = ""
+)
 
-	isTest = flag.Bool("test", false, "To test whether the connect could start or not")
-
+var (
+	isTest                                        = flag.Bool("test", false, "To test whether the connect could start or not")
 	rcloneConfigDir, rcloneCacheDir, rcloneLogDir string
 	rcloneVersion, osVersion, osKernel            string
 	userAgent                                     string
 )
 
 func main() {
+	// 开启日志文件名，行号，函数名
+	log.SetReportCaller(true)
+	// 设置日志级别
+	log.SetLevel(log.DebugLevel)
+	// 设置日志格式
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: time.RFC3339,
+		CallerPrettyfier: func(frame *runtime.Frame) (function string, file string) {
+			function = frame.Function
+			file = fmt.Sprintf("%s:%d", filepath.Base(frame.File), frame.Line)
+			return
+		},
+	})
 	flag.Parse()
 
 	log.Infof("CSI Connector Version: %s, CommitID: %s, Build time: %s\n", VERSION, COMMITID, BUILDTIME)
@@ -120,7 +138,7 @@ func main() {
 		os.Exit(1)
 	}
 	if err := ensureCommandExists(FusermountCmd); err != nil {
-		log.Errorf("Please make sure fusermount is installed in PATH: %s", err)
+		log.Errorf("Please make sure fusermount3 is installed in PATH: %s", err)
 		os.Exit(1)
 	}
 
@@ -188,6 +206,7 @@ func main() {
 	}
 }
 
+// 处理一个连接请求，
 func handleConn(conn net.Conn, cmdIn <-chan protocol.Cmd, cmdOut chan<- protocol.Cmd) {
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
@@ -243,14 +262,18 @@ func handleConn(conn net.Conn, cmdIn <-chan protocol.Cmd, cmdOut chan<- protocol
 
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
+		// 接收到一行数据并反序列化到 request
 		var request protocol.Request
 		if err := json.Unmarshal(scanner.Bytes(), &request); err != nil {
 			log.Warnf("Protocol parse error: %s", err)
 			return
-		} else if request.Version != protocol.Version {
+		}
+		if request.Version != protocol.Version {
 			log.Warnf("Unrecognized protocol version: %s", request.Version)
 			return
 		}
+
+		// 根据 request.Cmd 的值，反序列化其 payload 到对应的实现了 Cmd 接口的结构体
 		switch request.Cmd {
 		case protocol.InitKodoFsMountCmdName:
 			payload := new(protocol.InitKodoFSMountCmd)

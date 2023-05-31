@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 )
@@ -44,8 +44,8 @@ func (client *KodoFSClient) CreateVolume(ctx context.Context, volumeName, descri
 	if err != nil {
 		return "", fmt.Errorf("KodoFSClient.CreateVolume: marshal json request body err: %w", err)
 	}
-	url := client.masterUrl.String() + "/v1/kodofs-master/volume/create"
-	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	requestUrl := client.masterUrl.String() + "/v1/kodofs-master/volume/create"
+	request, err := http.NewRequest(http.MethodPost, requestUrl, bytes.NewReader(body))
 	if err != nil {
 		return "", fmt.Errorf("KodoFSClient.CreateVolume: create request err: %w", err)
 	}
@@ -55,13 +55,13 @@ func (client *KodoFSClient) CreateVolume(ctx context.Context, volumeName, descri
 		return "", fmt.Errorf("KodoFSClient.CreateVolume: send request err: %w", err)
 	} else {
 		defer resp.Body.Close()
-		if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
 			return "", fmt.Errorf("KodoFSClient.CreateVolume: read response err: %w", err)
-		} else if errBody, err := parseKodoFSErrorFromResponseBody(bytes); err != nil {
+		} else if errBody, err := parseKodoFSErrorFromResponseBody(bs); err != nil {
 			return "", err
 		} else if errBody != nil {
 			return "", errBody
-		} else if err = json.Unmarshal(bytes, &response); err != nil {
+		} else if err = json.Unmarshal(bs, &response); err != nil {
 			return "", fmt.Errorf("KodoFSClient.CreateVolume: parse response body err: %w", err)
 		} else {
 			return response.GatewayId, nil
@@ -88,8 +88,8 @@ func (client *KodoFSClient) CreateAccessPoint(ctx context.Context, volumeName, d
 	if err != nil {
 		return "", fmt.Errorf("KodoFSClient.CreateAccessPoint: marshal json request body err: %w", err)
 	}
-	url := client.masterUrl.String() + "/v1/kodofs-master/accessPoint/create"
-	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	requestUrl := client.masterUrl.String() + "/v1/kodofs-master/accessPoint/create"
+	request, err := http.NewRequest(http.MethodPost, requestUrl, bytes.NewReader(body))
 	if err != nil {
 		return "", fmt.Errorf("KodoFSClient.CreateAccessPoint: create request err: %w", err)
 	}
@@ -99,13 +99,13 @@ func (client *KodoFSClient) CreateAccessPoint(ctx context.Context, volumeName, d
 		return "", fmt.Errorf("KodoFSClient.CreateAccessPoint: send request err: %w", err)
 	} else {
 		defer resp.Body.Close()
-		if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
 			return "", fmt.Errorf("KodoFSClient.CreateAccessPoint: read response err: %w", err)
-		} else if errBody, err := parseKodoFSErrorFromResponseBody(bytes); err != nil {
+		} else if errBody, err := parseKodoFSErrorFromResponseBody(bs); err != nil {
 			return "", err
 		} else if errBody != nil {
 			return "", errBody
-		} else if err = json.Unmarshal(bytes, &response); err != nil {
+		} else if err = json.Unmarshal(bs, &response); err != nil {
 			return "", fmt.Errorf("KodoFSClient.CreateAccessPoint: parse response body err: %w", err)
 		} else {
 			return response.AccessId, nil
@@ -120,20 +120,20 @@ func (client *KodoFSClient) GetAccessToken(ctx context.Context, accessPointId st
 	var response Response
 	queryPairs := make(url.Values)
 	queryPairs.Add("accessId", accessPointId)
-	url := client.masterUrl.String() + "/v1/kodofs-master/accessPoint/info?" + queryPairs.Encode()
-	if request, err := http.NewRequest(http.MethodGet, url, http.NoBody); err != nil {
+	requestUrl := client.masterUrl.String() + "/v1/kodofs-master/accessPoint/info?" + queryPairs.Encode()
+	if request, err := http.NewRequest(http.MethodGet, requestUrl, http.NoBody); err != nil {
 		return "", fmt.Errorf("KodoFSClient.GetAccessToken: create request err: %w", err)
 	} else if resp, err := client.httpClient.Do(request.WithContext(ctx)); err != nil {
 		return "", fmt.Errorf("KodoFSClient.GetAccessToken: send request err: %w", err)
 	} else {
 		defer resp.Body.Close()
-		if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
 			return "", fmt.Errorf("KodoFSClient.GetAccessToken: read response err: %w", err)
-		} else if errBody, err := parseKodoFSErrorFromResponseBody(bytes); err != nil {
+		} else if errBody, err := parseKodoFSErrorFromResponseBody(bs); err != nil {
 			return "", err
 		} else if errBody != nil {
 			return "", errBody
-		} else if err = json.Unmarshal(bytes, &response); err != nil {
+		} else if err = json.Unmarshal(bs, &response); err != nil {
 			return "", fmt.Errorf("KodoFSClient.GetAccessToken: parse response body err: %w", err)
 		} else {
 			return response.AccessToken, nil
@@ -151,16 +151,16 @@ func (client *KodoFSClient) RemoveAccessPoint(ctx context.Context, accessPointId
 	if err != nil {
 		return fmt.Errorf("KodoFSClient.RemoveAccessPoint: marshal json request body err: %w", err)
 	}
-	url := client.masterUrl.String() + "/v1/kodofs-master/accessPoint/remove"
-	if request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body)); err != nil {
+	requestUrl := client.masterUrl.String() + "/v1/kodofs-master/accessPoint/remove"
+	if request, err := http.NewRequest(http.MethodPost, requestUrl, bytes.NewReader(body)); err != nil {
 		return fmt.Errorf("KodoFSClient.RemoveAccessPoint: create request err: %w", err)
 	} else if resp, err := client.httpClient.Do(request.WithContext(ctx)); err != nil {
 		return fmt.Errorf("KodoFSClient.RemoveAccessPoint: send request err: %w", err)
 	} else {
 		defer resp.Body.Close()
-		if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
 			return fmt.Errorf("KodoFSClient.RemoveAccessPoint: read response err: %w", err)
-		} else if errBody, err := parseKodoFSErrorFromResponseBody(bytes); err != nil {
+		} else if errBody, err := parseKodoFSErrorFromResponseBody(bs); err != nil {
 			return err
 		} else if errBody != nil {
 			return errBody
@@ -173,16 +173,16 @@ func (client *KodoFSClient) RemoveAccessPoint(ctx context.Context, accessPointId
 func (client *KodoFSClient) IsVolumeExists(ctx context.Context, volumeName string) (bool, error) {
 	queryPairs := make(url.Values)
 	queryPairs.Add("volume", volumeName)
-	url := client.masterUrl.String() + "/v1/kodofs-master/volume/info?" + queryPairs.Encode()
-	if request, err := http.NewRequest(http.MethodGet, url, http.NoBody); err != nil {
+	requestUrl := client.masterUrl.String() + "/v1/kodofs-master/volume/info?" + queryPairs.Encode()
+	if request, err := http.NewRequest(http.MethodGet, requestUrl, http.NoBody); err != nil {
 		return false, fmt.Errorf("KodoFSClient.IsVolumeExists: create request err: %w", err)
 	} else if resp, err := client.httpClient.Do(request.WithContext(ctx)); err != nil {
 		return false, fmt.Errorf("KodoFSClient.IsVolumeExists: send request err: %w", err)
 	} else {
 		defer resp.Body.Close()
-		if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
 			return false, fmt.Errorf("KodoFSClient.IsVolumeExists: read response err: %w", err)
-		} else if errBody, err := parseKodoFSErrorFromResponseBody(bytes); err != nil {
+		} else if errBody, err := parseKodoFSErrorFromResponseBody(bs); err != nil {
 			return false, err
 		} else if errBody != nil {
 			if errBody.Code == -2000 {
@@ -208,16 +208,16 @@ func (client *KodoFSClient) RenameVolume(ctx context.Context, oldVolumeName, new
 	if err != nil {
 		return fmt.Errorf("KodoFSClient.RenameVolume: marshal json request body err: %w", err)
 	}
-	url := client.masterUrl.String() + "/v1/kodofs-master/volume/rename"
-	if request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body)); err != nil {
+	requestUrl := client.masterUrl.String() + "/v1/kodofs-master/volume/rename"
+	if request, err := http.NewRequest(http.MethodPost, requestUrl, bytes.NewReader(body)); err != nil {
 		return fmt.Errorf("KodoFSClient.RenameVolume: create request err: %w", err)
 	} else if resp, err := client.httpClient.Do(request.WithContext(ctx)); err != nil {
 		return fmt.Errorf("KodoFSClient.RenameVolume: send request err: %w", err)
 	} else {
 		defer resp.Body.Close()
-		if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
 			return fmt.Errorf("KodoFSClient.RenameVolume: read response err: %w", err)
-		} else if errBody, err := parseKodoFSErrorFromResponseBody(bytes); err != nil {
+		} else if errBody, err := parseKodoFSErrorFromResponseBody(bs); err != nil {
 			return err
 		} else if errBody != nil {
 			return errBody
@@ -237,16 +237,16 @@ func (client *KodoFSClient) RemoveVolume(ctx context.Context, volumeName string)
 	if err != nil {
 		return fmt.Errorf("KodoFSClient.RemoveVolume: marshal json request body err: %w", err)
 	}
-	url := client.masterUrl.String() + "/v1/kodofs-master/volume/remove"
-	if request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body)); err != nil {
+	requestUrl := client.masterUrl.String() + "/v1/kodofs-master/volume/remove"
+	if request, err := http.NewRequest(http.MethodPost, requestUrl, bytes.NewReader(body)); err != nil {
 		return fmt.Errorf("KodoFSClient.RemoveVolume: create request err: %w", err)
 	} else if resp, err := client.httpClient.Do(request.WithContext(ctx)); err != nil {
 		return fmt.Errorf("KodoFSClient.RemoveVolume: send request err: %w", err)
 	} else {
 		defer resp.Body.Close()
-		if bytes, err := ioutil.ReadAll(resp.Body); err != nil {
+		if bs, err := io.ReadAll(resp.Body); err != nil {
 			return fmt.Errorf("KodoFSClient.RemoveVolume: read response err: %w", err)
-		} else if errBody, err := parseKodoFSErrorFromResponseBody(bytes); err != nil {
+		} else if errBody, err := parseKodoFSErrorFromResponseBody(bs); err != nil {
 			return err
 		} else if errBody != nil {
 			return errBody

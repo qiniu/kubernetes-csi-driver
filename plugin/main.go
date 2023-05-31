@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"sync"
+	"time"
 
 	csicommon "github.com/kubernetes-csi/drivers/pkg/csi-common"
 	log "github.com/sirupsen/logrus"
@@ -45,6 +47,21 @@ func init() {
 }
 
 func main() {
+	// 开启日志文件名，行号，函数名
+	log.SetReportCaller(true)
+	// 设置日志级别
+	log.SetLevel(log.DebugLevel)
+	// 设置日志格式
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: time.RFC3339,
+		CallerPrettyfier: func(frame *runtime.Frame) (function string, file string) {
+			function = frame.Function
+			file = fmt.Sprintf("%s:%d", filepath.Base(frame.File), frame.Line)
+			return
+		},
+	})
+
 	flag.Parse()
 
 	if driverName == nil {
@@ -66,10 +83,6 @@ func main() {
 	}
 	if err := ensureCommandExists("umount"); err != nil {
 		log.Errorf("Please make sure umount is installed in PATH: %s", err)
-		os.Exit(1)
-	}
-	if err := ensureCommandExists("findmnt"); err != nil {
-		log.Errorf("Please make sure findmnt is installed in PATH: %s", err)
 		os.Exit(1)
 	}
 	if proto, addr, err := csicommon.ParseEndpoint(*endpoint); err != nil {

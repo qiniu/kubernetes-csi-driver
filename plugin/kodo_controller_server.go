@@ -7,7 +7,7 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	csicommon "github.com/kubernetes-csi/drivers/pkg/csi-common"
-	"github.com/qiniu/csi-driver/qiniu"
+	"github.com/qiniu/kubernetes-csi-driver/qiniu"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -113,6 +113,7 @@ func (cs *kodoControllerServer) CreateVolume(ctx context.Context, req *csi.Creat
 		FIELD_BUCKET_NAME:         bucket.Name,
 		FIELD_S3_ENDPOINT:         s3Endpoint.String(),
 		FIELD_S3_REGION:           *s3RegionId,
+		FIELD_SUB_DIR:             parameter.subDir,
 		FIELD_ACCESS_KEY:          parameter.accessKey,
 		FIELD_SECRET_KEY:          parameter.secretKey,
 		FIELD_ORIGINAL_ACCESS_KEY: originalAccessKey,
@@ -121,6 +122,9 @@ func (cs *kodoControllerServer) CreateVolume(ctx context.Context, req *csi.Creat
 		FIELD_REGION:              parameter.region,
 		FIELD_STORAGE_CLASS:       parameter.storageClass,
 		FIELD_VFS_CACHE_MODE:      parameter.vfsCacheMode.String(),
+	}
+	if parameter.s3ForcePathStyle != nil {
+		volumeContext[FIELD_S3_FORCE_PATH_STYLE] = formatBool(*parameter.s3ForcePathStyle)
 	}
 	if parameter.dirCacheDuration != nil {
 		volumeContext[FIELD_DIR_CACHE_DURATION] = parameter.dirCacheDuration.String()

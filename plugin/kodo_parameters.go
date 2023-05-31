@@ -8,14 +8,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/qiniu/csi-driver/qiniu"
+	"github.com/qiniu/kubernetes-csi-driver/qiniu"
 )
 
 const (
 	FIELD_BUCKET_ID                 = "bucketid"
 	FIELD_BUCKET_NAME               = "bucketname"
+	FIELD_SUB_DIR                   = "subdir"
 	FIELD_S3_REGION                 = "s3region"
 	FIELD_S3_ENDPOINT               = "s3endpoint"
+	FIELD_S3_FORCE_PATH_STYLE       = "s3forcepathstyle"
 	FIELD_UC_ENDPOINT               = "ucendpoint"
 	FIELD_STORAGE_CLASS             = "storageclass"
 	FIELD_VFS_CACHE_MODE            = "vfscachemode"
@@ -71,12 +73,14 @@ type kodoPvParameter struct {
 func parseKodoPvParameter(functionName string, ctx, secrets map[string]string) (param *kodoPvParameter, err error) {
 	var p kodoPvParameter
 
+	// 先解析 storage class 参数
 	if scp, err := parseKodoStorageClassParameter(functionName, ctx, secrets); err != nil {
 		return nil, err
 	} else {
 		p.kodoStorageClassParameter = *scp
 	}
 
+	// 再从 ctx 里解析 pv 参数
 	for key, value := range ctx {
 		key = strings.ToLower(key)
 		switch key {
@@ -97,6 +101,8 @@ func parseKodoPvParameter(functionName string, ctx, secrets map[string]string) (
 			p.s3Region = strings.TrimSpace(value)
 		}
 	}
+
+	// ctx中未解析到的参数，尝试从secrets中解析
 	if p.s3Endpoint == nil {
 		if value, ok := secrets[FIELD_S3_ENDPOINT]; ok {
 			if p.s3Endpoint, err = parseUrl(value); err != nil {
@@ -170,6 +176,8 @@ type kodoStorageClassParameter struct {
 	accessKey, secretKey, region                       string
 	ucEndpoint                                         *url.URL
 	storageClass                                       string
+	subDir                                             string
+	s3ForcePathStyle                                   *bool
 	dirCacheDuration                                   *time.Duration
 	bufferSize                                         *uint64
 	vfsCacheMode                                       VfsCacheMode
@@ -205,6 +213,15 @@ func parseKodoStorageClassParameter(functionName string, ctx, secrets map[string
 			p.region = strings.TrimSpace(value)
 		case FIELD_STORAGE_CLASS:
 			p.storageClass = strings.TrimSpace(value)
+		case FIELD_SUB_DIR:
+			p.subDir = strings.TrimSpace(value)
+		case FIELD_S3_FORCE_PATH_STYLE:
+			if b, ok := parseBool(value); !ok {
+				err = fmt.Errorf("%s: unrecognized %s: %s", functionName, FIELD_S3_FORCE_PATH_STYLE, value)
+				return
+			} else {
+				p.s3ForcePathStyle = &b
+			}
 		case FIELD_VFS_CACHE_MODE:
 			switch toLower(value) {
 			case "off", "":
@@ -430,7 +447,21 @@ func parseKodoStorageClassParameter(functionName string, ctx, secrets map[string
 			p.storageClass = "STANDARD"
 		}
 	}
-
+	if p.subDir == "" {
+		if value, ok := secrets[FIELD_SUB_DIR]; ok {
+			p.subDir = strings.TrimSpace(value)
+		}
+	}
+	if p.s3ForcePathStyle == nil {
+		if value, ok := secrets[FIELD_S3_FORCE_PATH_STYLE]; ok {
+			if b, ok := parseBool(value); !ok {
+				err = fmt.Errorf("%s: unrecognized %s: %s", functionName, FIELD_S3_FORCE_PATH_STYLE, value)
+				return
+			} else {
+				p.s3ForcePathStyle = &b
+			}
+		}
+	}
 	param = &p
 	return
 }

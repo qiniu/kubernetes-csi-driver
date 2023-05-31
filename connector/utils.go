@@ -15,7 +15,7 @@ import (
 	"strconv"
 
 	"github.com/Unknwon/goconfig"
-	"github.com/qiniu/csi-driver/protocol"
+	"github.com/qiniu/kubernetes-csi-driver/protocol"
 )
 
 const (
@@ -25,6 +25,7 @@ const (
 	RCLONE_CONFIG_KEY_SECRET_KEY          = "secret_access_key"
 	RCLONE_CONFIG_KEY_REGION              = "region"
 	RCLONE_CONFIG_KEY_ENDPOINT            = "endpoint"
+	RCLONE_CONFIG_KEY_FORCE_PATH_STYLE    = "force_path_style"
 	RCLONE_CONFIG_KEY_LOCATION_CONSTRAINT = "location_constraint"
 	RCLONE_CONFIG_KEY_ACL                 = "acl"
 	RCLONE_CONFIG_KEY_STORAGE_CLASS       = "storage_class"
@@ -33,12 +34,15 @@ const (
 	RCLONE_CONFIG_KEY_UPLOAD_CUTOFF       = "upload_cutoff"
 	RCLONE_CONFIG_KEY_UPLOAD_CONCURRENCY  = "upload_concurrency"
 
-	RCLONE_CONFIG_S3_TYPE               = "s3"
-	RCLONE_CONFIG_QINIU_PROVIDER        = "Qiniu"
+	RCLONE_CONFIG_S3_TYPE = "s3"
+
+	// TODO: https://github.com/rclone/rclone/pull/7008
+	RCLONE_CONFIG_QINIU_PROVIDER        = "Other"
 	RCLONE_CONFIG_PUBLIC_READ_WRITE_ACL = "public-read-write"
 	RCLONE_CONFIG_BOOL_TRUE             = "true"
 )
 
+// 可跨平台的获取log存放的目录函数
 func userLogDir() (string, error) {
 	var dir string
 
@@ -79,6 +83,7 @@ func rcloneCacheId(items ...string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
+// 确保目标目录路径存在，如果不存在则创建，如果存在但不是目录则返回错误
 func ensureDirectoryExists(path string) error {
 	if fileInfo, err := os.Stat(path); os.IsNotExist(err) {
 		return os.MkdirAll(path, 0700)
@@ -88,6 +93,7 @@ func ensureDirectoryExists(path string) error {
 	return nil
 }
 
+// 确保目标文件不存在，如果存在则删除
 func ensureFileNotExists(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return nil
@@ -96,6 +102,7 @@ func ensureFileNotExists(path string) error {
 	}
 }
 
+// 确保目标可执行文件在PATH中存在，如果不存在则返回错误
 func ensureCommandExists(name string) error {
 	_, err := exec.LookPath(name)
 	if err != nil {
@@ -105,6 +112,7 @@ func ensureCommandExists(name string) error {
 	}
 }
 
+// 用于持久化rclone挂载相关的配置
 func writeRcloneConfig(cmd *protocol.InitKodoMountCmd) (string, error) {
 	config, _ := goconfig.LoadFromReader(bytes.NewReader([]byte{}))
 
@@ -118,6 +126,8 @@ func writeRcloneConfig(cmd *protocol.InitKodoMountCmd) (string, error) {
 	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_ACL, RCLONE_CONFIG_PUBLIC_READ_WRITE_ACL)
 	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_STORAGE_CLASS, cmd.StorageClass)
 	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_NO_CHECK_BUCKET, RCLONE_CONFIG_BOOL_TRUE)
+	config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_FORCE_PATH_STYLE, formatBool(cmd.S3ForcePathStyle))
+
 	if cmd.UploadChunkSize != nil {
 		config.SetValue(cmd.VolumeId, RCLONE_CONFIG_KEY_UPLOAD_CHUNK_SIZE, formatByteSize(*cmd.UploadChunkSize))
 	}
@@ -140,6 +150,7 @@ func init() {
 	osKernelRegexp = regexp.MustCompile(`\-\s+os/kernel:\s+([^\s]+)`)
 }
 
+// 获取并解析 rclone 版本信息
 func getRcloneVersion() (rcloneVersion, osVersion, osKernel string, err error) {
 	output, err := exec.Command(RcloneCmd, "version").Output()
 	if err != nil {
@@ -163,4 +174,8 @@ func formatUint(i uint64) string {
 
 func formatByteSize(i uint64) string {
 	return formatUint(i) + "b"
+}
+
+func formatBool(b bool) string {
+	return strconv.FormatBool(b)
 }

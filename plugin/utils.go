@@ -17,7 +17,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/qiniu/csi-driver/protocol"
+	"github.com/moby/sys/mountinfo"
+	"github.com/qiniu/kubernetes-csi-driver/protocol"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -123,14 +124,16 @@ func redirectToChan(logPrefix string, reader io.Reader, c chan<- string) {
 	}
 }
 
-func mountKodoFSLocally(ctx context.Context, gatewayID, mountPath string, mountServerAddress *url.URL, accessToken, subDir string) error {
+func mountKodoFSLocally(ctx context.Context, volumeId, gatewayID, mountPath string, mountServerAddress *url.URL, accessToken, subDir string) error {
 	outputChan := make(chan string)
 	defer close(outputChan)
 
 	cmd := protocol.InitKodoFSMountCmd{
-		GatewayID: gatewayID,
-		MountPath: mountPath,
-		SubDir:    subDir,
+		VolumeId:     volumeId,
+		GatewayID:    gatewayID,
+		MountPath:    mountPath,
+		SubDir:       subDir,
+		RunOnSystemd: false,
 	}
 	execCmd := cmd.ExecCommand(ctx)
 	stdin, err := execCmd.StdinPipe()
@@ -166,7 +169,7 @@ func mountKodoFSLocally(ctx context.Context, gatewayID, mountPath string, mountS
 	return execCmd.Run()
 }
 
-func mountKodoFS(gatewayID, mountPath string, mountServerAddress *url.URL, accessToken, subDir string) error {
+func mountKodoFS(volumeId, gatewayID, mountPath string, mountServerAddress *url.URL, accessToken, subDir string) error {
 	conn, err := net.Dial("unix", SocketPath)
 	if err != nil {
 		return fmt.Errorf("failed to dial unix socket %s: %w", SocketPath, err)
@@ -201,9 +204,11 @@ func mountKodoFS(gatewayID, mountPath string, mountServerAddress *url.URL, acces
 	}
 
 	if err = writeCmdToConn(encoder, &protocol.InitKodoFSMountCmd{
-		GatewayID: gatewayID,
-		MountPath: mountPath,
-		SubDir:    subDir,
+		VolumeId:     volumeId,
+		GatewayID:    gatewayID,
+		MountPath:    mountPath,
+		SubDir:       subDir,
+		RunOnSystemd: true,
 	}); err != nil {
 		return err
 	}
@@ -255,7 +260,8 @@ func mountKodoFS(gatewayID, mountPath string, mountServerAddress *url.URL, acces
 	return nil
 }
 
-func mountKodo(volumeId, mountPath, subDir, accessKey, secretKey, bucketId, s3Region, s3Endpoint, storageClass string,
+func mountKodo(volumeId, mountPath, subDir, accessKey, secretKey, bucketId string,
+	s3Region, s3Endpoint, storageClass string, s3ForcePathStyle *bool,
 	vfsCacheMode VfsCacheMode, dirCacheDuration *time.Duration, bufferSize *uint64,
 	vfsCacheMaxAge, vfsCachePollInterval, vfsWriteBack *time.Duration, vfsCacheMaxSize, vfsReadAhead *uint64,
 	vfsFastFingerPrint bool, vfsReadChunkSize, vfsReadChunkSizeLimit *uint64,
@@ -305,6 +311,9 @@ func mountKodo(volumeId, mountPath, subDir, accessKey, secretKey, bucketId, s3Re
 		WriteBackCache:     writeBackCache,
 		DebugHttp:          debugHttp,
 		DebugFuse:          debugFuse,
+	}
+	if s3ForcePathStyle != nil {
+		cmd.S3ForcePathStyle = *s3ForcePathStyle
 	}
 	if dirCacheDuration != nil {
 		cmd.DirCacheDuration = dirCacheDuration.String()
@@ -451,29 +460,19 @@ func isKodoMounted(mountPath string) (bool, error) {
 }
 
 func isMounted(mountPath, fsType string) (bool, error) {
-	type (
-		FileSystem struct {
-			FsType string `json:"fstype"`
-			Target string `json:"target"`
-		}
-		FindMntOutput struct {
-			FileSystems []*FileSystem `json:"filesystems"`
-		}
-	)
-	var body FindMntOutput
-	if output, err := exec.Command("findmnt", "-J", mountPath).Output(); err != nil {
-		return false, fmt.Errorf("failed to find the mount point via `findmnt`: %w", err)
-	} else if err = json.Unmarshal(output, &body); err != nil {
-		return false, fmt.Errorf("unexpected output from `findmnt`: %w", err)
+	info, err := mountinfo.GetMounts(func(i *mountinfo.Info) (skip bool, stop bool) {
+		// 全都不跳过
+		skip = false
+		// 找到了就直接停止
+		stop = i.Mountpoint == mountPath && i.FSType == fsType
+		return
+	})
+
+	if err != nil {
+		return false, fmt.Errorf("failed to find the mount point: %w", err)
 	}
-	log.Infof("Found %d fileSystems on %s", len(body.FileSystems), mountPath)
-	for _, fs := range body.FileSystems {
-		log.Infof("Found fileSystem `%#v` on %s", fs, mountPath)
-		if fs.Target == mountPath && fs.FsType == fsType {
-			return true, nil
-		}
-	}
-	return false, nil
+
+	return len(info) > 0, nil
 }
 
 func randomPassword(n int) string {

@@ -36,8 +36,7 @@ const (
 
 	RCLONE_CONFIG_S3_TYPE = "s3"
 
-	// TODO: https://github.com/rclone/rclone/pull/7008
-	RCLONE_CONFIG_QINIU_PROVIDER        = "Other"
+	RCLONE_CONFIG_QINIU_PROVIDER        = "Qiniu"
 	RCLONE_CONFIG_PUBLIC_READ_WRITE_ACL = "public-read-write"
 	RCLONE_CONFIG_BOOL_TRUE             = "true"
 )

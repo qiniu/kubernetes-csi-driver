@@ -11,6 +11,16 @@ Qiniu Kubernetes CSI Plugin implement an interface between CSI enabled Container
 * Service Accounts with required RBAC permissions
 * FUSE must be available on all Kubernetes Nodes
 
+## Dependencies
+
+The plugin depends on some Kubernetes images:
+
+- `k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.5.0`
+- `gcr.io/k8s-staging-sig-storage/csi-provisioner:canary`
+
+Make sure all Kubernetes nodes can pull these images.
+However, in an offline scenario, you can also run `docker save <IMAGE_NAME>:<IMAGE_TAG> > <IMAGE_NAME>_<IMAGE_TAG>.tar` to export these images, and then import these images on all Kubernetes nodes by running `docker load < <IMAGE_NAME>_<IMAGE_TAG>.tar`.
+
 ## Compiling and Package
 
 plugin.storage.qiniu.com can be compiled in a form of a container.

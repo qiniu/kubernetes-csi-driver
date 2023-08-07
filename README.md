@@ -9,7 +9,7 @@ Qiniu Kubernetes CSI Plugin implement an interface between CSI enabled Container
 ## Configuration Requirements
 
 * Service Accounts with required RBAC permissions
-* FUSE must be available on all Kubernetes Nodes
+* FUSE3 must be available on all Kubernetes Nodes
 
 ## Dependencies
 
@@ -39,7 +39,7 @@ $ make push_image
 #### Step 1: Create Kodo CSI Plugin
 
 ```sh
-$ kubectl create -f ./k8s/kodo/
+$ kubectl create -f https://github.com/qiniu/kubernetes-csi-driver/releases/download/v0.1.2/kodo-plugin.yaml
 ```
 
 > Note: The plugin log style can be configured by environment variable: LOG_TYPE.
@@ -152,7 +152,7 @@ This mode should support all normal file system operations.
 #### Step 1: Create KodoFS CSI Plugin
 
 ```sh
-$ kubectl create -f ./k8s/kodofs/
+$ kubectl create -f https://github.com/qiniu/kubernetes-csi-driver/releases/download/v0.1.2/kodofs-plugin.yaml
 ```
 
 > Note: The plugin log style can be configured by environment variable: LOG_TYPE.

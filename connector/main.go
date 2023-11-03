@@ -143,7 +143,7 @@ func main() {
 	}
 
 	if rcloneVersion, osVersion, osKernel, err = getRcloneVersion(); err != nil {
-		log.Errorf("Failed to get rclone version", err)
+		log.Errorf("Failed to get rclone version: %s", err)
 		os.Exit(1)
 	}
 
@@ -422,10 +422,22 @@ func handleCmd(cmdOut chan<- protocol.Cmd, cmdIn <-chan protocol.Cmd) {
 			log.Infof("Execute cmd: %#v", cmd)
 			switch c := cmd.(type) {
 			case *protocol.InitKodoFSMountCmd:
+				if c.MayRunOnSystemd {
+					if err := useSystemdOrNot(ctx); err != nil {
+						log.Infof("Failed to detect systemd-run: %s", err)
+						c.MayRunOnSystemd = false
+					}
+				}
 				if ok := execCommand(c.ExecCommand(ctx), nil); !ok {
 					return
 				}
 			case *protocol.InitKodoMountCmd:
+				if c.MayRunOnSystemd {
+					if err := useSystemdOrNot(ctx); err != nil {
+						log.Infof("Failed to detect systemd-run: %s", err)
+						c.MayRunOnSystemd = false
+					}
+				}
 				if rcloneConfigPath, err = writeRcloneConfig(c); err != nil {
 					log.Warnf("Failed to write rclone config: %s", err)
 					return

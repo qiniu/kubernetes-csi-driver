@@ -129,11 +129,11 @@ func mountKodoFSLocally(ctx context.Context, volumeId, gatewayID, mountPath stri
 	defer close(outputChan)
 
 	cmd := protocol.InitKodoFSMountCmd{
-		VolumeId:     volumeId,
-		GatewayID:    gatewayID,
-		MountPath:    mountPath,
-		SubDir:       subDir,
-		RunOnSystemd: false,
+		VolumeId:        volumeId,
+		GatewayID:       gatewayID,
+		MountPath:       mountPath,
+		SubDir:          subDir,
+		MayRunOnSystemd: false,
 	}
 	execCmd := cmd.ExecCommand(ctx)
 	stdin, err := execCmd.StdinPipe()
@@ -204,11 +204,11 @@ func mountKodoFS(volumeId, gatewayID, mountPath string, mountServerAddress *url.
 	}
 
 	if err = writeCmdToConn(encoder, &protocol.InitKodoFSMountCmd{
-		VolumeId:     volumeId,
-		GatewayID:    gatewayID,
-		MountPath:    mountPath,
-		SubDir:       subDir,
-		RunOnSystemd: true,
+		VolumeId:        volumeId,
+		GatewayID:       gatewayID,
+		MountPath:       mountPath,
+		SubDir:          subDir,
+		MayRunOnSystemd: true,
 	}); err != nil {
 		return err
 	}

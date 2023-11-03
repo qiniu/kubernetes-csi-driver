@@ -31,7 +31,7 @@ spec:
       containers:
         - name: csi-driver-registrar
           image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.5.0
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
             - "--csi-address=/var/lib/kubelet/csi-plugins/kodofsplugin.storage.qiniu.com/csi.sock"
@@ -58,7 +58,7 @@ spec:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
           image: ${DOCKERHUB_ORGANIZATION}/${DOCKERHUB_IMAGE}:${DOCKERHUB_TAG}
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           args:
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--v=2"

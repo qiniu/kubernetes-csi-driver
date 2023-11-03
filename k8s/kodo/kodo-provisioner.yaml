@@ -43,7 +43,7 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/kubelet/csi-plugins/kodoplugin.storage.qiniu.com/csi.sock
-          imagePullPolicy: "Always"
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: kubelet-dir
               mountPath: /var/lib/kubelet/

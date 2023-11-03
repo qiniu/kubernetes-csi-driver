@@ -8,13 +8,13 @@ build: connector/$(CONNECTOR_FILENAME) plugin/$(PLUGIN_FILENAME)
 
 connector/$(CONNECTOR_FILENAME):
 	cd connector && \
-		go build -ldflags \
+		CGO_ENABLED=0 go build -ldflags \
 		"-X main.VERSION=$(VERSION) -X main.COMMITID=$(COMMIT_ID) -X main.BUILDTIME=$(BUILD_TIME)" \
 		-o $(CONNECTOR_FILENAME)
 
 plugin/$(PLUGIN_FILENAME):
 	cd plugin && \
-		go build -ldflags \
+		CGO_ENABLED=0 go build -ldflags \
 		"-X main.VERSION=$(VERSION) -X main.COMMITID=$(COMMIT_ID) -X main.BUILDTIME=$(BUILD_TIME)" \
 		-o $(PLUGIN_FILENAME)
 

@@ -41,7 +41,7 @@ jobs:
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
 
       - name: build
-        run: make k8s/kodo.yaml && make k8s/kodofs.yaml
+        run: make combine_csi_driver_yaml
 
       - name: Upload kodo.yaml files to Release Asset
         id: upload-release-asset-kodo

@@ -72,14 +72,17 @@ install_plugins: install_kodo_csi_driver install_kodofs_csi_driver
 .PHONY: delete_plugins
 delete_plugins: delete_kodo_csi_driver delete_kodofs_csi_driver
 
+.PHONY: docker/rclone
 docker/rclone:
 	curl -LJO# https://github.com/rclone/rclone/releases/download/$(RCLONE_VERSION)/rclone-$(RCLONE_VERSION)-linux-amd64.zip
 	unzip rclone-$(RCLONE_VERSION)-linux-amd64.zip
 	mv rclone-$(RCLONE_VERSION)-linux-amd64/rclone docker/rclone
+	chmod +x docker/rclone
 	rm rclone-$(RCLONE_VERSION)-linux-amd64.zip
 	rm -rf rclone-$(RCLONE_VERSION)-linux-amd64
 
 # 下载kodofs二进制文件，由于kodofs是私有仓库，所以需要携带 Github API Token 才能下载
+.PHONY: docker/kodofs
 docker/kodofs:
 	@if [ -z $$GITHUB_API_TOKEN ];\
 		then \
@@ -88,7 +91,7 @@ docker/kodofs:
 	fi
 	cd scripts && bash get_gh_asset.sh qbox kodofs $(KODOFS_VERSION) kodofs
 	mv scripts/kodofs docker/kodofs
-
+	chmod +x docker/kodofs
 
 .PHONY: build_image
 build_image: docker/rclone docker/kodofs

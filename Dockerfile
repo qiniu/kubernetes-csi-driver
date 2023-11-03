@@ -4,8 +4,10 @@ FROM golang:1.18.10-bullseye as build-env
 COPY . /app
 WORKDIR /app
 # 安装依赖
-RUN apt update -yqq && \
-    apt install -yqq git make
+RUN apt-get update -yqq && \
+    apt-get install -yqq --no-install-recommends git make ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
 # 编译二进制可执行文件
 RUN make build
 
@@ -32,10 +34,5 @@ RUN chmod +x /usr/local/bin/kodofs \
     /usr/local/bin/${PLUGIN_FILENAME} \
     /usr/local/bin/${CONNECTOR_FILENAME} \
     /entrypoint.sh
-
-
-RUN apt-get update -yqq && \
-    apt-get install -yqq ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT ["/entrypoint.sh"]

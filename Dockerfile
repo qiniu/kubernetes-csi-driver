@@ -1,18 +1,16 @@
 # 1. 第一阶段，编译二进制可执行文件
-FROM golang:1.18.10-bullseye as build-env
+FROM golang:1.21-alpine3.18 as build-env
 
 COPY . /app
 WORKDIR /app
 # 安装依赖
-RUN apt-get update -yqq && \
-    apt-get install -yqq --no-install-recommends git make ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache git make
 
 # 编译二进制可执行文件
 RUN make build
 
 # 2. 第二阶段，构建最终镜像
-FROM debian:bullseye
+FROM alpine:3.18
 
 ARG PLUGIN_FILENAME=plugin.storage.qiniu.com
 ARG CONNECTOR_FILENAME=connector.${PLUGIN_FILENAME}
@@ -34,5 +32,7 @@ RUN chmod +x /usr/local/bin/kodofs \
     /usr/local/bin/${PLUGIN_FILENAME} \
     /usr/local/bin/${CONNECTOR_FILENAME} \
     /entrypoint.sh
+
+RUN apk add --no-cache ca-certificates bash
 
 ENTRYPOINT ["/entrypoint.sh"]

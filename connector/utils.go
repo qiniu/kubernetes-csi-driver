@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
@@ -109,6 +110,21 @@ func ensureCommandExists(name string) error {
 	} else {
 		return nil
 	}
+}
+
+// 检查是否可以用 Systemd 来执行命令
+func useSystemdOrNot(ctx context.Context) error {
+	if err := ensureCommandExists("systemd-run"); err != nil {
+		return err
+	}
+	return exec.CommandContext(ctx, "systemd-run",
+		"--no-ask-password",
+		"--unit=systemd-test.service",
+		"--pipe",
+		"--service-type=forking",
+		"--collect",
+		"true",
+	).Run()
 }
 
 // 用于持久化rclone挂载相关的配置

@@ -3,9 +3,10 @@ package protocol
 import (
 	"context"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type InitKodoMountCmd struct {
@@ -44,6 +45,7 @@ type InitKodoMountCmd struct {
 	WriteBackCache        bool    `json:"write_back_cache,omitempty"`
 	DebugHttp             bool    `json:"debug_http,omitempty"`
 	DebugFuse             bool    `json:"debug_fuse,omitempty"`
+	MayRunOnSystemd       bool    `json:"may_run_on_systemd"`
 }
 
 func (*InitKodoMountCmd) Command() {}
@@ -149,7 +151,11 @@ func (c *InitKodoMountCmd) ExecCommand(ctx context.Context) *exec.Cmd {
 	log.Infof("rclone mount command: %s %s", RcloneCmd, strings.Join(args, " "))
 
 	// 执行挂载命令
-	return execOnSystemd(ctx, fmt.Sprintf("run-kodo-rclone-%s-%s.service", c.VolumeId, randomName(8)), RcloneCmd, args...)
+	if c.MayRunOnSystemd {
+		return execOnSystemd(ctx, fmt.Sprintf("run-kodo-rclone-%s-%s.service", c.VolumeId, randomName(8)), RcloneCmd, args...)
+	} else {
+		return exec.CommandContext(ctx, RcloneCmd, args...)
+	}
 }
 
 type KodoUmountCmd struct {

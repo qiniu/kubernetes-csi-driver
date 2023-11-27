@@ -14,9 +14,9 @@ type contextKey string
 
 const (
 	// KodoFS executable name
-	KodoFSCmd = "kodofs"
+	KodoFSCmd = "/usr/local/bin/kodofs"
 	// Rclone executable name
-	RcloneCmd = "rclone"
+	RcloneCmd = "/usr/local/bin/rclone"
 
 	ContextKeyConfigFilePath contextKey = "config_file_path"
 	ContextKeyUserAgent      contextKey = "user_agent"

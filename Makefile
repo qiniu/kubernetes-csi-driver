@@ -72,36 +72,56 @@ install_plugins: install_kodo_csi_driver install_kodofs_csi_driver
 .PHONY: delete_plugins
 delete_plugins: delete_kodo_csi_driver delete_kodofs_csi_driver
 
-.PHONY: docker/rclone
-docker/rclone:
+.PHONY: download-rclone
+download-rclone:
+	# 下载 amd64 版本
 	curl -LJO# https://github.com/rclone/rclone/releases/download/$(RCLONE_VERSION)/rclone-$(RCLONE_VERSION)-linux-amd64.zip
 	unzip rclone-$(RCLONE_VERSION)-linux-amd64.zip
-	mv rclone-$(RCLONE_VERSION)-linux-amd64/rclone docker/rclone
-	chmod +x docker/rclone
+	[ -f "docker/amd64/rclone" ] && rm docker/amd64/rclone || :
+	mv rclone-$(RCLONE_VERSION)-linux-amd64/rclone docker/amd64/rclone
+	chmod +x docker/amd64/rclone
 	rm rclone-$(RCLONE_VERSION)-linux-amd64.zip
 	rm -rf rclone-$(RCLONE_VERSION)-linux-amd64
 
+	# 下载 arm64 版本
+	curl -LJO# https://github.com/rclone/rclone/releases/download/$(RCLONE_VERSION)/rclone-$(RCLONE_VERSION)-linux-arm64.zip
+	unzip rclone-$(RCLONE_VERSION)-linux-arm64.zip
+	[ -f "docker/arm64/rclone" ] && rm docker/arm64/rclone || :
+	mv rclone-$(RCLONE_VERSION)-linux-arm64/rclone docker/arm64/rclone
+	chmod +x docker/arm64/rclone
+	rm rclone-$(RCLONE_VERSION)-linux-arm64.zip
+	rm -rf rclone-$(RCLONE_VERSION)-linux-arm64
+
 # 下载kodofs二进制文件，由于kodofs是私有仓库，所以需要携带 Github API Token 才能下载
-.PHONY: docker/kodofs
-docker/kodofs:
+.PHONY: download-kodofs
+download-kodofs:
 	@if [ -z $$GITHUB_API_TOKEN ];\
 		then \
 			echo "Please configure environment GITHUB_API_TOKEN"; \
 			exit 1; \
 	fi
+	# 下载 arm64
+	[ -f "scripts/kodofs_linux_arm64" ] && rm scripts/kodofs_linux_arm64 || :
+	cd scripts && bash get_gh_asset.sh qbox kodofs $(KODOFS_VERSION) kodofs_linux_arm64
+	[ -f "docker/arm64/kodofs" ] && rm docker/arm64/kodofs || :
+	mv scripts/kodofs_linux_arm64 docker/arm64/kodofs
+	chmod +x docker/arm64/kodofs
+	# 下载 amd64
+	[ -f "scripts/kodofs" ] && rm scripts/kodofs || :
 	cd scripts && bash get_gh_asset.sh qbox kodofs $(KODOFS_VERSION) kodofs
-	mv scripts/kodofs docker/kodofs
-	chmod +x docker/kodofs
-
-.PHONY: build_image
-build_image: docker/rclone docker/kodofs
-	docker build --pull \
-		-t="$(DOCKERHUB_ORGANIZATION)/$(DOCKERHUB_IMAGE):$(VERSION)" \
-		-f Dockerfile .
+	[ -f "docker/amd64/kodofs" ] && rm docker/amd64/kodofs || :
+	mv scripts/kodofs docker/amd64/kodofs
+	chmod +x docker/amd64/kodofs
 
 .PHONY: push_image
-push_image: build_image
-	docker push "$(DOCKERHUB_ORGANIZATION)/$(DOCKERHUB_IMAGE):$(VERSION)"
+push_image: docker/rclone docker/kodofs
+	docker buildx create --name=CSIBuilder --driver docker-container  --platform linux/amd64,linux/arm64
+	docker buildx build --push \
+		--builder CSIBuilder \
+ 		--platform linux/amd64,linux/arm64 \
+ 		-t "$(DOCKERHUB_ORGANIZATION)/$(DOCKERHUB_IMAGE):$(VERSION)" \
+ 		-f Dockerfile \
+ 		.
 
 .PHONY: install_kodo_static_example
 install_kodo_static_example: k8s/kodo.yaml

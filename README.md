@@ -39,7 +39,7 @@ $ make push_image
 #### Step 1: Create Kodo CSI Plugin
 
 ```sh
-$ kubectl create -f https://github.com/qiniu/kubernetes-csi-driver/releases/download/v0.1.3/kodo-plugin.yaml
+$ kubectl create -f https://github.com/qiniu/kubernetes-csi-driver/releases/download/v0.2.0/kodo-plugin.yaml
 ```
 
 > Note: The plugin log style can be configured by environment variable: LOG_TYPE.
@@ -152,7 +152,7 @@ This mode should support all normal file system operations.
 #### Step 1: Create KodoFS CSI Plugin
 
 ```sh
-$ kubectl create -f https://github.com/qiniu/kubernetes-csi-driver/releases/download/v0.1.3/kodofs-plugin.yaml
+$ kubectl create -f https://github.com/qiniu/kubernetes-csi-driver/releases/download/v0.2.0/kodofs-plugin.yaml
 ```
 
 > Note: The plugin log style can be configured by environment variable: LOG_TYPE.
